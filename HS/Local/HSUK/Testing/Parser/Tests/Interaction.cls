@@ -1,15 +1,9 @@
-Class HS.Local.HSUK.Testing.Parser.Tests.Interaction
+Class HS.Local.HSUK.Testing.Parser.Tests.Interaction Extends (%SerialObject, %JSON.Adaptor)
 {
 
-Property MessageRequest As HS.Local.HSUK.Testing.Parser.Interactions.MessageRequest;
+Property MessageRequest As HS.Local.HSUK.Testing.Parser.Interactions.Message(%JSONFIELDNAME = "request");
 
-Property MessageResponse As HS.Local.HSUK.Testing.Parser.Interactions.MessageResponse;
-
-Method %OnNew(pMessageRequest As HS.Local.HSUK.Testing.Parser.Interactions.MessageRequest, pMessageResponse As HS.Local.HSUK.Testing.Parser.Interactions.MessageResponse)
-{
-	Set ..MessageRequest = pMessageRequest
-	Set ..MessageResponse = pMessageResponse
-}
+Property MessageResponse As HS.Local.HSUK.Testing.Parser.Interactions.MessageResponse(%JSONFIELDNAME = "response");
 
 /// This validates the interaction to ensure the response we actually got back from
 /// the production (<property>pResponse</property>) matches the response
@@ -23,6 +17,21 @@ Method ValidateInteraction(pResponse As Ens.Response) As %Status
 {
 	/// Loop through all properties in the MessageResponse to
 	Quit ..MessageResponse.ValidateResponse(pResponse)
+}
+
+Storage Default
+{
+<Data name="InteractionState">
+<Value name="1">
+<Value>MessageRequest</Value>
+</Value>
+<Value name="2">
+<Value>MessageResponse</Value>
+</Value>
+</Data>
+<State>InteractionState</State>
+<StreamLocation>^HS.Local.HSUKAC16.InteractionS</StreamLocation>
+<Type>%Storage.Serial</Type>
 }
 
 }
