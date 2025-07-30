@@ -1,11 +1,28 @@
-Class HS.Local.HSUK.Testing.Parser.Interactions.Message Extends (%SerialObject, %JSON.Adaptor)
+Class HS.Local.HSUK.Testing.Parser.Interactions.Message Extends %SerialObject [ Abstract ]
 {
 
-Parameter %JSONIGNOREINVALIDFIELD As BOOLEAN = 1;
+Property ClassName As %String;
 
-Property ClassName As %String(%JSONFIELDNAME = "class");
+Property Properties As %DynamicObject;
 
-// Property Properties As %DynamicObject(%JSONFIELDNAME = "properties");
+Method %JSONImportInternal() As %Status
+{
+	Quit $$$OK
+}
+
+/// For some reason the parent object is passed into p1
+/// Ensure the "request" field is the %JSONFIELDNAME of Interaction.MessageRequest
+ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %RegisteredObject
+{
+
+	/// Create a new message 
+	Set request = pJSON.request
+	Set message = $CLASSMETHOD($CLASSNAME(), "%New")
+	Set message.ClassName = request.class
+	Set message.Properties = request.properties
+
+	Return message
+}
 
 Storage Default
 {

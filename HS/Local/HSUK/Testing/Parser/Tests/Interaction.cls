@@ -1,7 +1,7 @@
 Class HS.Local.HSUK.Testing.Parser.Tests.Interaction Extends (%SerialObject, %JSON.Adaptor)
 {
 
-Property MessageRequest As HS.Local.HSUK.Testing.Parser.Interactions.Message(%JSONFIELDNAME = "request");
+Property MessageRequest As HS.Local.HSUK.Testing.Parser.Interactions.MessageRequest(%JSONFIELDNAME = "request");
 
 Property MessageResponse As HS.Local.HSUK.Testing.Parser.Interactions.MessageResponse(%JSONFIELDNAME = "response");
 

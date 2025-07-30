@@ -45,6 +45,8 @@ Method RunInteraction(pHost As Ens.Config.Item, pInteraction As HS.Local.HSUK.Te
 {
 	/// Send the MessageRequest from the interaction and validate the response
 	Write "Running an interaction..."
+	Set messageRequest = pInteraction.MessageRequest
+	Set messageResponse = pInteraction.MessageResponse
 }
 
 Storage Default
