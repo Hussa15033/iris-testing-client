@@ -20,12 +20,12 @@ Method RunTestsOnProduction(pProduction As Ens.Config.Production)
 
 	For i=1:1:pProduction.Items.Count() {
 		Set item = pProduction.Items.GetAt(i)
-		If (item.Name = ..TargetHostName && item.ClassName = ..TargetHostClass) {
+		If ((item.Name = ..TargetHostName) && (item.ClassName = ..TargetHostClass)) {
 			Set itemFound = item
 		}
 	}
 
-	If (item = "") {
+	If (itemFound = "") {
 		Throw ##class(%Exception.General).%New("Item not found", "-193",,"Business host '" _ ..TargetHostName _ "' with class '" _ ..TargetHostClass _ "' not found")
 	}
 
@@ -44,6 +44,7 @@ Method RunTestsOnProduction(pProduction As Ens.Config.Production)
 Method RunInteraction(pHost As Ens.Config.Item, pInteraction As HS.Local.HSUK.Testing.Parser.Tests.Interaction) [ Private ]
 {
 	/// Send the MessageRequest from the interaction and validate the response
+	Write "Running an interaction..."
 }
 
 Storage Default
