@@ -5,7 +5,7 @@
 Class HS.Local.HSUK.Testing.Parser.Validators.EqualsValidator Extends HS.Local.HSUK.Testing.Parser.Validators.Validator
 {
 
-Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(MAXLEN=""), pOptions As %DynamicObject) As %Status
+Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(MAXLEN="")) As %Status
 {
 	If (pActualValue = pExpectedValue) {
 		Return $$$OK

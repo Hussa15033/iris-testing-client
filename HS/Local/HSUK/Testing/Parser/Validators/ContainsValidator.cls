@@ -1,9 +1,9 @@
 Class HS.Local.HSUK.Testing.Parser.Validators.ContainsValidator Extends HS.Local.HSUK.Testing.Parser.Validators.Validator
 {
 
-Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(MAXLEN=""), pOptions As %DynamicObject) As %Status
+Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(MAXLEN="")) As %Status
 {
-	Set containsText = pOptions.%Get("containsText")
+	Set containsText = ..Options.%Get("containsText")
 	If (containsText = "" || '$D(containsText)) {
 		Do ..ValidationError("ContainsValidator not configured correctly, please include the 'containsText' option!")
 		Return 0
