@@ -11,12 +11,23 @@ Property TestCases As list Of HS.Local.HSUK.Testing.Parser.Tests.TestCase(%JSONF
 
 Method RunTests() As %Status
 {
+	/// TODO: ENSURE THE PRODUCTION IS WORKING AND IS RUNNING AND IS IDLE
+	Set prod = ##class(Ens.Config.Production).%OpenId(..TargetProduction)
+
+	If ('$D(prod) || '$ISOBJECT(prod)) {
+		Throw ##class(%Exception.General).%New("Failed to open production", "-1382",,"Failed to open production " _ ..TargetProduction)
+	}
+
 	New $NAMESPACE
 	Set $NAMESPACE = ..TargetNamespace
 
-	W "Running Tests.."
+	Write "Running Tests.."
 
-	
+	For i=1:1:..TestCases.Size {
+		Set testCase = ..TestCases.GetAt(i)
+		Write "Passing production into RunTestsOnProduction"
+		Do testCase.RunTestsOnProduction(prod)
+	}
 }
 
 Storage Default

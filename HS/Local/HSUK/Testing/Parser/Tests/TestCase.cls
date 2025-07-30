@@ -13,12 +13,35 @@ Property Interactions As list Of HS.Local.HSUK.Testing.Parser.Tests.Interaction(
 
 /// Runs the test suite, this will run all interactions against the TargetHost.
 /// Verifies that the TargetHost has the TargetHostClass as it's class name
-Method RunTestsOnProduction(pProductionName As %String)
+Method RunTestsOnProduction(pProduction As Ens.Config.Production)
 {
-	///
+	Set itemFound = ""
+	#dim item As Ens.Config.Item
+
+	For i=1:1:pProduction.Items.Count() {
+		Set item = pProduction.Items.GetAt(i)
+		If (item.Name = ..TargetHostName && item.ClassName = ..TargetHostClass) {
+			Set itemFound = item
+		}
+	}
+
+	If (item = "") {
+		Throw ##class(%Exception.General).%New("Item not found", "-193",,"Business host '" _ ..TargetHostName _ "' with class '" _ ..TargetHostClass _ "' not found")
+	}
+
+	#dim itemFound As Ens.Config.Item
+	If ('itemFound.Enabled) {
+		Throw ##class(%Exception.General).%New("Item not enabled", "-15",,"Business host '" _ ..TargetHostName _ "' with class '" _ ..TargetHostClass _ "' has not been enabled within production")
+	}
+
+	/// Loop through all interactions and run them
+	For i=1:1:..Interactions.Size {
+		Do ..RunInteraction(itemFound, ..Interactions.GetAt(i))
+	}
+	#; W host
 }
 
-Method RunInteraction(pInteraction As HS.Local.HSUK.Testing.Parser.Tests.Interaction) [ Private ]
+Method RunInteraction(pHost As Ens.Config.Item, pInteraction As HS.Local.HSUK.Testing.Parser.Tests.Interaction) [ Private ]
 {
 	/// Send the MessageRequest from the interaction and validate the response
 }
