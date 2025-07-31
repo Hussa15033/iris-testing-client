@@ -1,4 +1,4 @@
-Class HS.Local.HSUK.Testing.Parser.TestInteractions.Address Extends %SerialObject
+Class HS.Local.HSUK.Testing.Parser.TestInteractions.Address Extends (%SerialObject, %XML.Adaptor)
 {
 
 Property HouseNumber As %Integer;

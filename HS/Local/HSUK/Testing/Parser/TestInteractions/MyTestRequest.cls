@@ -1,4 +1,4 @@
-Class HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestRequest Extends Ens.Request
+Class HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestRequest Extends (Ens.Request, %XML.Adaptor)
 {
 
 Property Name As %String;

@@ -12,6 +12,7 @@
                         "properties": {
                             "Name": "Testing",
                             "Gender": "M",
+                            "Age": 25,
                             "FavouriteColours": [
                                 "Blue",
                                 "Green",
