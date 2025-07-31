@@ -14,11 +14,6 @@ Parameter IGNOREPRODUCTIONERRORS = 0;
 
 Parameter TestSuites As CONFIGVALUE;
 
-Method OnAfterProductionStart() As %Status
-{
-	Return ..ParseAndRunTestSuites()
-}
-
 ClassMethod Run(pProductionName As %String, pTestSuite) As %Status
 {
 	Set ^UnitTestRoot = "/"
@@ -57,6 +52,11 @@ ClassMethod Run(pProductionName As %String, pTestSuite) As %Status
 	Do ##super()
 }
 
+Method OnAfterProductionStart() As %Status
+{
+	Return ..ParseAndRunTestSuites()
+}
+
 Method ParseAndRunTestSuites() As %Status
 {
 	/// TODO:
@@ -72,8 +72,32 @@ Method ParseAndRunTestSuites() As %Status
 		#dim testCase As HS.Local.HSUK.Testing.Parser.Tests.TestCase
 		Set testCase = ts.TestCases.GetAt(i)
 
-		/// Validate the TargetHostName
-		/// Validate the TargetHostClass within the TestCase
+		Set targetHostName = testCase.TargetHostName
+		Set targetHostClass = testCase.TargetHostClass
+		
+		/// Attempt to find the target host this test is for
+		Set prod = ##class(Ens.Config.Production).%OpenId(..#PRODUCTION,,.tSC)
+		$$$ThrowOnError(tSC)
+
+		Set itemFound = ""
+		For i=1:1:prod.Items.Count() {
+			#dim item As Ens.Config.Item
+			Set item = prod.Items.GetAt(i)
+			If ((item.Name = targetHostName) && (item.ClassName = targetHostClass)) {
+				Set itemFound = item
+			}
+		}
+
+		If (itemFound = "") {
+			Throw ##class(%Exception.General).%New("Item not found", "-193",,"Business host '" _ targetHostName _ "' with class '" _ targetHostClass _ "' not found")
+		}
+
+		#dim itemFound As Ens.Config.Item
+		If ('itemFound.Enabled) {
+			Throw ##class(%Exception.General).%New("Item not enabled", "-15",,"Business host '" _ targetHostName _ "' with class '" _ targetHostClass _ "' has not been enabled within production")
+		}
+
+		/// By this point, the Config item is valid, exists within the production and is enabled
 
 		/// Run the interactions within the TestCase
 		Set interactions = testCase.Interactions
@@ -87,7 +111,7 @@ Method ParseAndRunTestSuites() As %Status
 			Set requestMessage = interaction.MessageRequest.GenerateMessageRequest()
 
 			/// Send the message into the production
-			Do ..SendRequest(testCase.TargetHostName, requestMessage, .responseMessage, 1)
+			Do ..SendRequest(targetHostName, requestMessage, .responseMessage, 1)
 
 			/// Now validate the response against what we expect
 			zw responseMessage
