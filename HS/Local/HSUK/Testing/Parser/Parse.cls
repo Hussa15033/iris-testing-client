@@ -4,11 +4,12 @@ Class HS.Local.HSUK.Testing.Parser.Parse
 /// Run the parser for a directory of .JSON test files
 /// These files MUST end in ".json" to be picked up by this test utility
 /// <property>pFileDirectory</property> - The directory in the file system which holds the .json test definitions
-ClassMethod Run(pFileDirectory As %String)
+ClassMethod Run(pFileDirectory As %String) As HS.Local.HSUK.Testing.Parser.Tests.TestSuite
 {
 	Set pFilename = "C:\Users\ahussain\Desktop\NHS Interfaces\testing-client\fixtures.json"
 	Set testSuite = ..ParseFile(pFilename)
-	Do testSuite.RunTests()
+	Return testSuite
+	#; Do testSuite.RunTests()
 }
 
 ClassMethod ParseJSON(pJSON As %String)

@@ -9,7 +9,6 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 {
 	/// Create a new message 
 	Set response = pJSON.response
-	Write "WE ARE HERE"
 	Set message = ##super(pJSON, pParent)
 
 	If (response.validators) {
@@ -34,9 +33,17 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 	Return message
 }
 
-/// Validate the response to ensure all of the expected properties
-/// within <property>Properties</property>) appear and are valid as shown in
-/// the actual response - <property>pResponse</property>.
+/// This validates the interaction to ensure the response we actually got back from
+/// the production (<property>pResponse</property>) matches the response
+/// that we expected from this interact (<property>MessageResponse</property>)
+/// 
+/// May throw an error if there was a problem with validating the response
+/// against the expected response
+/// 
+/// The default behaviour is to check all fields of the actual <property>pResponse</property>
+/// match the fields exactly as shown in <property>..Properties</property>, however the validators
+/// specified in <property>..Validators</property> will overwrite the default behaviour
+/// 
 Method ValidateResponse(pResponse As Ens.Response) As %Status
 {
 	/// Check if we have any validators
