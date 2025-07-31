@@ -1,19 +1,26 @@
 Class HS.Local.HSUK.Testing.Parser.Interactions.MessageResponse Extends HS.Local.HSUK.Testing.Parser.Interactions.Message
 {
 
+Parameter MESSAGECLASS = "Ens.Response";
+
 Property Validators As array Of HS.Local.HSUK.Testing.Parser.Validators.Validator;
 
 /// For some reason the parent object is passed into p1
-/// Ensure the "request" field is the %JSONFIELDNAME of Interaction.MessageRequest
+/// Ensure the "response" field is the %JSONFIELDNAME of Interaction.MessageRequest
 ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %RegisteredObject
 {
-	/// Create a new message 
-	Set response = pJSON.response
-	Set message = ##super(pJSON, pParent)
+	Set responseJSON = pJSON.response
+	If (responseJSON = "") {
+		Throw ##class(%Exception.General).%New("Invalid JSON","-11",,"The request property does not exist for interaction")
+	}
 
-	If (response.validators) {
+	/// Create a new message 
+	Set message = ##super(responseJSON, pParent)
+
+	/// If any properties have validators attached, parse them and create the validator
+	If (responseJSON.validators) {
 		#dim validators As %DynamicObject
-		Set validators = response.validators
+		Set validators = responseJSON.validators
 
 		Set iter = validators.%GetIterator()
 

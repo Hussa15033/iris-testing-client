@@ -115,7 +115,8 @@ Method ParseAndRunTestSuites() As %Status
 
 			/// Now validate the response against what we expect
 			zw responseMessage
-			Do interaction.MessageResponse.ValidateResponse(responseMessage)
+			Set validation = interaction.MessageResponse.ValidateResponse(responseMessage)
+			Return:'$$$ISOK(validation) validation
 		}
 	}
 
