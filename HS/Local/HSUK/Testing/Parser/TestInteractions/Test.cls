@@ -1,17 +1,21 @@
+Class HS.Local.HSUK.Testing.Parser.TestInteractions.Test Extends %RegisteredObject
 {
-    "production": "HS.Local.HSUK.DefaultProduction",
-    "namespace": "NHSINTERFACES",
-    "tests": [
-        {
-            "name": "TestOperation",
-            "class": "HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestOperation",
-            "interactions": [
-                {
+
+ClassMethod GenerateRequestMessage() As HS.Local.HSUK.Testing.Parser.Tests.Interaction
+{
+		Set a = ##class(HS.Local.HSUK.Testing.Parser.Tests.Interaction).%New()
+		Do a.%JSONImport(
+			{
                     "request": {
                         "class": "HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestRequest",
                         "properties": {
                             "Name": "Testing",
                             "Gender": "M",
+                            "Age": 25,
+                            "ContactNumbers": {
+                                "Home": "0371783 831 8931",
+                                "Work": "073892783913"
+                            },
                             "FavouriteColours": [
                                 "Blue",
                                 "Green",
@@ -70,28 +74,39 @@
                                 "Streets": [
                                     "Street1",
                                     "Street2"
-                                ],
-                                "OtherAddresses": [
-                                    {
-                                        "HouseNumber": 66,
-                                        "Streets": [
-                                            "Street3"
-                                        ]
-                                    }
-                                ],
-                                "NamedAddresses": {
-                                    "Main": {
-                                        "HouseNumber": 33,
-                                        "Streets": [
-                                            "Street 4"
-                                        ]
-                                    }
-                                }
-                            }
+                                ]
+							},
+                            "OtherAddresses": [
+								{
+									"HouseNumber": 66,
+									"Streets": [
+										"Street3"
+									]
+								}
+							],
+							"NamedAddresses": {
+								"Main": {
+									"HouseNumber": 33,
+									"Streets": [
+										"Street 4"
+									]
+								}
+							}
                         }
                     }
                 }
-            ]
-        }
-    ]
+		)
+
+		Return a
+}
+
+ClassMethod Test()
+{
+	#dim interaction As HS.Local.HSUK.Testing.Parser.Tests.Interaction
+	Set interaction = ..GenerateRequestMessage()
+	Set message = interaction.MessageRequest.GenerateMessageRequest()
+	zw message
+    Return message
+}
+
 }
