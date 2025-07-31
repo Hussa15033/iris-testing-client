@@ -3,9 +3,9 @@ Class HS.Local.HSUK.Testing.Parser.Tests.TestCase Extends (%SerialObject, %JSON.
 
 Parameter %JSONENABLED = 1;
 
-Property TargetHostName As %String(%JSONFIELDNAME = "name");
+Property TargetHostName As %String(%JSONFIELDNAME = "name", MAXLEN = "");
 
-Property TargetHostClass As %String(%JSONFIELDNAME = "class");
+Property TargetHostClass As %String(%JSONFIELDNAME = "class", MAXLEN = "");
 
 Property Interactions As list Of HS.Local.HSUK.Testing.Parser.Tests.Interaction(%JSONFIELDNAME = "interactions");
 
