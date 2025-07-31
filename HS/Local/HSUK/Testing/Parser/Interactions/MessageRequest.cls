@@ -65,61 +65,62 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 		#; w "JSON Type: " _ jsonType,!
 
 		If (OSType = "" && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean"))) {
-			/// Both are primitive data types, simply set the property values
+			/// Both the JSON and ObjectScript field are primitive data types, simply set the property value
 			Set $PROPERTY(pObj, key) = value
-		} ElseIf (CollectionType = "list" && $CLASSMETHOD(OSType, "%Extends", "%Collection.ListOfDT")) {
+		} ElseIf (CollectionType = "list") {
 			Do ..AssertEquals(jsonType, "array")
 
-			/// We are mapping an array in JSON to a list of primitive data types in ObjectScript
+			/// We are mapping an array in JSON to either a list of primitive data types in ObjectScript
+			/// or a list of Complex objects in ObjectScript
 			/// We loop over the values in the JSON array and insert them into the list in ObjectScript
-			#dim list As %Collection.ListOfDT
+			#dim list As %Collection.AbstractList
 			#dim value As %DynamicArray
 			Set list = $PROPERTY(pObj, key)
-			Set lIter = value.%GetIterator()
-			While lIter.%GetNext(.key1, .value1, .type1) {
-				Do list.Insert(value1)
+			Set jsonArrayIterator = value.%GetIterator()
+			While jsonArrayIterator.%GetNext(.key1, .value1, .type1) {
+				Set insertVal = ""
+				If $CLASSMETHOD(OSType, "%Extends", "%Collection.ListOfDT") {
+					/// Since we are mapping to a list of primitive data types in ObjectScript,
+					/// we can simply insert this into the list
+					Set insertVal = value1
+				} ElseIf ($CLASSMETHOD(OSType, "%Extends", "%Collection.ListOfObj")) {
+					/// We are inserting into a list of Complex objects, we need to instantiate the object,
+					/// populate it then insert
+					/// We mapping an array of JSON objects in a JSON array to a list of Complex object types in ObjectScript
+					/// First determine the type of the object in ObjectScript, this is stored in the PropertyDefinition
+					/// and extracted to the 'DataType' variable
+					Set insertVal = $CLASSMETHOD(DataType, "%New")
+					Do ..PopulateObjectFromJSON(.insertVal, value1)
+				}
+				Do list.Insert(insertVal)
 			}
-		} ElseIf (CollectionType = "list" && $CLASSMETHOD(OSType, "%Extends", "%Collection.ListOfObj")) {
-			Do ..AssertEquals(jsonType, "array")
-
-			/// We mapping an array of JSON objects in a JSON array to a list of Complex object types in ObjectScript
-			/// First determine the type of the object in ObjectScript, this is stored in the PropertyDefinition
-			/// and extracted to the 'DataType' variable
-			/// We then loop over the array and instantiate the object, then call this method again to populate its fields recursively
-			Set list = $PROPERTY(pObj, key)
-			Set lIter = value.%GetIterator()
-			While lIter.%GetNext(.key1, .value1, .type1) {
-				Set subObj = $CLASSMETHOD(DataType, "%New")
-				Do ..PopulateObjectFromJSON(.subObj, value1)
-				Do list.Insert(subObj)
-			}
-		} ElseIf (CollectionType = "array" && $CLASSMETHOD(OSType, "%Extends", "%Collection.ArrayOfDT")) {
+		} ElseIf (CollectionType = "array") {
 			Do ..AssertEquals(jsonType, "object")
-			
-			/// We are mapping to an array of primitives on ObjectScript, this should be stored in a JSON object
+
+			/// We are mapping to an array of primitives/Complex Objects in ObjectScript, this should be stored in a JSON object
 			/// with the key->value mapping remaining the same.
 			/// We loop through all key/value pairs in the JSON and use SetAt to set the assoc array in ObjectScript
-			#dim arr As %Collection.ArrayOfDT
-			Set arr = $PROPERTY(pObj, key)
-			Set lIter = value.%GetIterator()
-			While lIter.%GetNext(.key1, .value1, .type1) {
-				Do arr.SetAt(value1, key1)
-			}
-		} ElseIf (CollectionType = "array" && $CLASSMETHOD(OSType, "%Extends", "%Collection.ArrayOfObj")) {
-			Do ..AssertEquals(jsonType, "object")
 
-			/// We are mapping to an array of Complex objects in ObjectScript. This is stored as a JSON object in the JSON
-			/// with each key being a string, and each value being another JSON object
-			/// We need to determine the data type using the DataType variable from the %Dictionary.PropertyDefinition
-			/// We loop through all key/value pairs in the JSON, instantiate the ObjectScript objects, populate using
-			/// this same method and then use SetAt to set the keys in the array
-			#dim arr1 As %Collection.ArrayOfObj
-			Set arr1 = $PROPERTY(pObj, key)
-			Set lIter = value.%GetIterator()
-			While lIter.%GetNext(.key1, .value1, .type1) {
-				Set subObj = $CLASSMETHOD(DataType, "%New")
-				Do ..PopulateObjectFromJSON(.subObj, value1)
-				Do arr1.SetAt(subObj, key1)
+			#dim arr As %Collection.AbstractArray
+			Set arr = $PROPERTY(pObj, key)
+			Set jsonObjectIterator = value.%GetIterator()
+			While jsonObjectIterator.%GetNext(.key1, .value1, .type1) {
+				Set putVal = ""
+				If ($CLASSMETHOD(OSType, "%Extends", "%Collection.ArrayOfDT")) {
+					/// Mapping to an array of primitives, we can simply copy the JSON value over
+					Set putVal = value1
+				} ElseIf ($CLASSMETHOD(OSType, "%Extends", "%Collection.ArrayOfObj")) {
+					/// We are mapping to an array of Complex objects in ObjectScript. This is stored as a JSON object in the JSON
+					/// with each key being a string, and each value being another JSON object
+					/// We need to determine the data type using the DataType variable from the %Dictionary.PropertyDefinition
+					/// We loop through all key/value pairs in the JSON, instantiate the ObjectScript objects, populate using
+					/// this same method and then use SetAt to set the keys in the array
+					Set putVal = $CLASSMETHOD(DataType, "%New")
+					Do ..PopulateObjectFromJSON(.putVal, value1)
+				}
+
+				Do arr.SetAt(putVal, key1)
+				
 			}
 		} ElseIf ($ISOBJECT($PROPERTY(pObj, key))) {
 			Set subObj = $PROPERTY(pObj, key)
