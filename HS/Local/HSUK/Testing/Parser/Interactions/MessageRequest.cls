@@ -28,20 +28,6 @@ Method GenerateMessageRequest()
 
 	#dim messageObj As Ens.Request
 	Set messageObj = $CLASSMETHOD(..ClassName, "%New")
-	
-	Set mIter = ..Properties.%GetIterator()
-	#; While mIter.%GetNext(.key, .value, .type) {
-	#; 	// TODO: Handle cases for serial objects within request messages
-	#; 	W "Key " _ key _ " has type " _ $CLASSNAME($PROPERTY(messageObj, key))
-	#; 	Do ..SetProperty(messageObj, key, value)
-	#; 	#; Try {
-	#; 	#; 	Set $PROPERTY(messageObj, key) = value
-	#; 	#; } Catch ex {
-	#; 	#; 	Do $System.OBJ.DisplayError(ex.AsStatus())
-	#; 	#; 	Throw ##class(%Exception.General).%New("Failed to set property of request class","-883",,"Property "_key_" of request message type " _ ..ClassName _ " does not exist")
-	#; 	#; }
-	#; }
-
 	Do ..PopulateObjectFromJSON(.messageObj, ..Properties)
 
 	Return messageObj
@@ -56,6 +42,8 @@ Method AssertEquals(pStr1, pStr2, pFailMessage) As %Status
 	Quit $$$OK
 }
 
+/// A helper method to populate the properties of an object, given the object, and the corresponding
+/// JSON object, will throw an error if any properties cannot be set
 Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %DynamicObject)
 {
 	If ('pJSON.%Extends("%DynamicObject")) {
@@ -140,42 +128,6 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 			/// Mismatch or unhandled types between JSON and ObjectScript Object
 			Throw ##class(%Exception.General).%New("Failed to populate message","-313",,"Unknown how to handle types, JSON type: " _ jsonType _ " ObjectScript type: " _ OSType _ ", ObjectScript collection: " _ CollectionType _ ", ObjectScript data type: " _ DataType _ ". JSON: " _ value.%ToJSON())
 		}
-	}
-}
-
-/// A helper method to populate the property of an object given the object, property name and
-/// JSON object
-Method SetProperty(obj As %RegisteredObject, pProp, pJSONValue) As %Status
-{
-	Set PropertyType = $CLASSNAME($PROPERTY(obj, pProp))
-	If (PropertyType = "") {
-		If ($ISOBJECT(pJSONValue)) {
-			Throw ##class(%Exception.General).%New("Unexpected JSON Value","-300",,"Expected a primitive data type but got " _ $CLASSNAME(pJSONValue) _ " for property " _ pProp)
-		}
-
-		// Set the primitive data type
-		Set $PROPERTY(obj, pProp) = pJSONValue
-		Return $$$OK
-	}
-
-	Do ..GetPropertyDefinition(PropertyType,)
-	If ($CLASSMETHOD(PropertyType, "%Extends", "%Collection.ListOfDT")) {
-		If ('$ISOBJECT(pJSONValue) || 'pJSONValue.%Extends("%Library.DynamicArray")) {
-			Throw ##class(%Exception.General).%New("Unexpected JSON Value","-301",,"Expected a JSON array for property " _ pProp _ " but got " _ $CLASSNAME(pJSONValue))
-		}
-
-		/// Loop through the values in the JSON array and insert them into the list
-		w !,!,!,!
-		W PropertyType
-		w !,!,!,!
-	} ElseIf ($CLASSMETHOD(PropertyType, "%Extends", "%ArrayOfObjects")) {
-		w !,!,!,!
-		Write "Property " _ pProp _ " is an array..."
-	} ElseIf ($CLASSMETHOD(PropertyType, "%Extends", "%SerialObject")) {
-		w !,!,!,!
-		Write "Property " _ pProp _ " is a serial object..."
-	} Else {
-		Throw ##class(%Exception.General).%New("Unhandle property type","-1009",,"Could not handle property " _ pProp _ " of class " _ $CLASSNAME(obj) _ ", unknown how to handle objects of type " _ PropertyType)
 	}
 }
 
