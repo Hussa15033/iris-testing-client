@@ -9,7 +9,7 @@ ClassMethod GenerateRequestMessage() As HS.Local.HSUK.Testing.Parser.Tests.Inter
                     "request": {
                         "class": "HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestRequest",
                         "properties": {
-                            "Name": "Testing",
+                            "Name": "OtherUser",
                             "Gender": "M",
                             "Age": 25,
                             "ContactNumbers": {
@@ -109,6 +109,8 @@ ClassMethod Test()
     Set bo = ##class(HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestOperation).SampleCallCM(message, .response)
     Set sc = interaction.MessageResponse.ValidateResponse(response)
     $$$ThrowOnError(sc)
+
+    Write "Validation success!",!
     Return message
 }
 

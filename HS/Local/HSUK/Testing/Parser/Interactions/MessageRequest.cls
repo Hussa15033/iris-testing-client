@@ -24,8 +24,6 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 /// 
 Method GenerateMessageRequest()
 {
-	Write "Creating message class " _ ..ClassName
-
 	#dim messageObj As Ens.Request
 	Set messageObj = $CLASSMETHOD(..ClassName, "%New")
 	Do ..PopulateObjectFromJSON(.messageObj, ..Properties)

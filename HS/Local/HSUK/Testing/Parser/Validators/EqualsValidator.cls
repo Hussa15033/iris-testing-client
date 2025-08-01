@@ -11,7 +11,7 @@ Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(
 		Return $$$OK
 	}
 
-	Return 0
+	Return $System.Status.Error("-109", "Validation error with EqualsValidator - expected '" _ pExpectedValue _ "' but got '" _ pActualValue _ "'")
 }
 
 }

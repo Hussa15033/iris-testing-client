@@ -3,92 +3,114 @@
     "namespace": "NHSINTERFACES",
     "tests": [
         {
-            "name": "TestOperation",
-            "class": "HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestOperation",
+            "name": "PDSProcess",
+            "class": "HS.Local.HSUK.Spine.PDS.Process.PDSProcess",
             "interactions": [
                 {
                     "request": {
-                        "class": "HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestRequest",
+                        "class": "HS.Local.HSUK.Spine.PDS.Message.GetRequest",
                         "properties": {
-                            "Name": "Testing",
-                            "Gender": "M",
-                            "Age": 25,
-                            "FavouriteColours": [
-                                "Blue",
-                                "Green",
-                                "Red"
-                            ],
-                            "MainAddress": {
-                                "HouseNumber": 55,
-                                "Streets": [
-                                    "Street1",
-                                    "Street2"
-                                ]
-                            },
-                            "OtherAddresses": [
-                                {
-                                    "HouseNumber": 66,
-                                    "Streets": [
-                                        "Street3"
-                                    ]
-                                }
-                            ],
-                            "NamedAddresses": {
-                                "Main": {
-                                    "HouseNumber": 33,
-                                    "Streets": [
-                                        "Street 4"
-                                    ]
-                                }
-                            }
+                            "AccessMode": "APP",
+                            "EndUserODSCode": "Y5556",
+                            "NHSNumber": 9449306567
                         }
                     },
                     "response": {
-                        "class": "HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestResponse",
+                        "class": "HS.Local.HSUK.Spine.PDS.Message.GetResponse",
                         "validators": {
-                            "Name": {
+                            "Patient.PatientID": {
                                 "validator": "ContainsValidator",
                                 "options": {
-                                    "containsText": "rUs"
-                                }
-                            },
-                            "OtherAddresses[0].Streets[0]": {
-                                "validator": "ContainsValidator",
-                                "options": {
-                                    "containsText": "eet3"
+                                    "containsText": "Failed"
                                 }
                             }
                         },
                         "properties": {
-                            "Name": "OtherUser",
-                            "FavouriteColours": [
-                                "Blue",
-                                "Green",
-                                "Red"
-                            ],
-                            "MainAddress": {
-                                "HouseNumber": 55,
-                                "Streets": [
-                                    "Street1",
-                                    "Street2"
-                                ],
-                                "OtherAddresses": [
-                                    {
-                                        "HouseNumber": 66,
-                                        "Streets": [
-                                            "Street3"
-                                        ]
+                            "HttpResponseCode": "200",
+                            "HttpResponseDescription": "OK",
+                            "Success": "true",
+                            "Patient": {
+                                "PatientID": "9449306567",
+                                "VersionID": "28",
+                                "NHSNumber": "9449306567",
+                                "NHSNumberStatus": {
+                                    "CodeSystem": "https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatus",
+                                    "Code": "01",
+                                    "Description": "Number present and verified"
+                                },
+                                "Security": "U",
+                                "UsualName": {
+                                    "NameID": "fre0",
+                                    "GivenName": "Ankit",
+                                    "FamilyName": "Mehta",
+                                    "Prefix": "MR",
+                                    "Use": "usual",
+                                    "EffectivePeriod": {
+                                        "StartDate": "2011-07-25"
                                     }
-                                ],
-                                "NamedAddresses": {
-                                    "Main": {
-                                        "HouseNumber": 33,
-                                        "Streets": [
-                                            "Street 4"
-                                        ]
+                                },
+                                "Gender": "female",
+                                "BirthDate": "1927-12-20",
+                                "DeathDateTime": "2013-03-12T00:00:00+00:00",
+                                "DeathNotificationStatus": "1",
+                                "DeathNotificationDateTime": "2024-09-23T16:18:51+00:00",
+                                "HomeAddress": {
+                                    "AddressID": "C0591FE1",
+                                    "Use": "home",
+                                    "EffectivePeriod": {
+                                        "StartDate": "2024-01-17"
+                                    },
+                                    "Line": {
+                                        "LineItem": "5 Drury Lane"
+                                    },
+                                    "PostalCode": "TW2 7TP"
+                                },
+                                "OtherAddresses": {
+                                    "Address": {
+                                        "AddressID": "2D45AFA2",
+                                        "Use": "temp",
+                                        "EffectivePeriod": {
+                                            "StartDate": "2002-12-06",
+                                            "EndDate": "2012-11-05"
+                                        },
+                                        "Line": {
+                                            "LineItem": [
+                                                "25 Kings Road",
+                                                "Queens Way",
+                                                "Local",
+                                                "Town",
+                                                "Heathrow"
+                                            ]
+                                        },
+                                        "PostalCode": "SW3 8QG",
+                                        "_OtherAddressesKey": "temp"
                                     }
-                                }
-                            }
+                                },
+                                "Telecoms": {
+                                    "Telecom": {
+                                        "TelecomID": "30D5DDBA",
+                                        "Use": "home",
+                                        "System": "phone",
+                                        "Value": "99999999",
+                                        "EffectivePeriod": {
+                                            "StartDate": "2001-01-11",
+                                            "EndDate": "2002-01-15"
+                                        },
+                                        "_TelecomsKey": "home|phone"
+                                    }
+                                },
+                                "NominatedPharmacy": "FMA45",
+                                "RemovalFromRegistration": {
+                                    "CodeSystem": "https://fhir.nhs.uk/CodeSystem/PDS-RemovalReasonExitCode",
+                                    "Code": "DEA",
+                                    "Description": "Death"
+                                },
+                                "RemovalFromRegistrationDate": {
+                                    "StartDate": "2024-03-20T13:13:03+00:00"
+                                },
+                                "RestrictedPatient": "false"
+                            },
+                            "Superseded": "false"
                         }
                     }
                 }

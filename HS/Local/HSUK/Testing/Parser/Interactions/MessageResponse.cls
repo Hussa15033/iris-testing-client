@@ -203,8 +203,10 @@ Method ValidateResponse(pResponse As Ens.Response) As %Status
 		Set validator = ..Validators.GetAt(path)
 
 		/// Run the validator, will throw a validation error if one occurs
+		
 		Try {
-			Do validator.Validate(expectedValue, actualValue)
+			Set tSC = validator.Validate(expectedValue, actualValue)
+			$$$ThrowOnError(tSC)
 		} Catch ex {
 			Set ex.Data = "Failed validation on field " _ path _ ": " _ ex.Data
 			Throw ex
