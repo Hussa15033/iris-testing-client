@@ -40,9 +40,54 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 	Return message
 }
 
+/// A recursive helper method which resolves a path in dot notation
+/// e.g. "Name.Addresses[0].Street" and extracts that information
+/// from the Response object <property>pObj</property>
+Method ResolveDotPath(pPath As %String, pObj As Ens.Response)
+{
+}
+
+/// A recursive helper method to extract all paths from a JSON object
+Method BuildAllPaths(pJSON, Output paths As %ArrayOfDataTypes, curPath = "")
+{
+	Set JSONClass = $CLASSNAME(pJSON)
+
+	/// Base case
+	If (JSONClass = pJSON) {
+		/// If the $CLASSNAME() returns the value itself, it means this value
+		/// is a primitive
+		Set curPath = $ZSTRIP(curPath, "<", ".")
+		Do paths.SetAt(pJSON, curPath)
+		Return
+	}
+	
+	/// Otherwise we are only dealing with arrays or objects,
+	/// we want to loop through and recursively build their paths
+	/// If dealing with Arrays we use square bracket notation [0] for indexes
+	/// and if dealing with Objects we use dot notation
+	Set jsonIter = pJSON.%GetIterator()
+	While jsonIter.%GetNext(.key, .value, .type) {
+		Set resolvedPath = key
+		If curPath '= "" {
+			/// We are not at the root
+			Set resolvedPath = curPath _ "." _ key
+		}
+
+		If ($CLASSMETHOD(JSONClass, "%Extends", "%DynamicObject")) {
+			/// This is an object
+			Set resolvedPath = curPath _ "." _ key
+		} ElseIf ($CLASSMETHOD(JSONClass, "%Extends", "%DynamicArray")) {
+			/// This is an array
+			Set resolvedPath = curPath _ "[" _ key _ "]"
+		}
+
+		Do ..BuildAllPaths(value, .paths, resolvedPath)
+	}
+}
+
 /// This validates the interaction to ensure the response we actually got back from
-/// the production (<property>pResponse</property>) matches the response
-/// that we expected from this interact (<property>MessageResponse</property>)
+/// the production (ObjectScript:<property>pResponse</property>) matches the response
+/// that we expected from this interaction (JSON:<property>MessageResponse</property>)
 /// 
 /// May throw an error if there was a problem with validating the response
 /// against the expected response
@@ -53,7 +98,19 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 /// 
 Method ValidateResponse(pResponse As Ens.Response) As %Status
 {
-	/// Check if we have any validators
+	Set JSON = ..Properties
+
+	/// We loop through the JSON defined in the testing definition
+	/// and ensure all values match, validators will override the behaviour used
+	/// for the properties. We convert each path into the dot notation path
+	/// and resolve it using <method>..ResolveDotPath</method>
+	Set jsonIter = JSON.%GetIterator()
+	Set JSONPaths = ##class(%ArrayOfDataTypes).%New()
+	Do ..BuildAllPaths(..Properties, .JSONPaths)
+
+	zw output
+
+	Quit $$$OK
 }
 
 Storage Default
