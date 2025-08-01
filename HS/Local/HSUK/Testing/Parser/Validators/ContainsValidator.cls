@@ -1,6 +1,7 @@
 Class HS.Local.HSUK.Testing.Parser.Validators.ContainsValidator Extends HS.Local.HSUK.Testing.Parser.Validators.Validator
 {
 
+/// TODO: Change this to a "TextValidator" with more options
 Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(MAXLEN="")) As %Status
 {
 	Set containsText = ..Options.%Get("containsText")
