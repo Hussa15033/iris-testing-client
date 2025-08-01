@@ -12,7 +12,7 @@ Method %OnNew(pOptions As %DynamicObject) As %Status
 Method ValidationError(pText As %String)
 {
 	Throw ##class(%Exception.General).%New(
-			"ValidationError",
+			"ValidationError for " _ $CLASSNAME(),
 			"-2000",,
 			"Validation error occurred for " _ $CLASSNAME() _ ": " _ pText)
 }
@@ -30,6 +30,19 @@ Method Validate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(MA
 /// Override this method to validate the value, should return a value of 0 (failure) or 1 (success)
 Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(MAXLEN="")) As %Status [ Abstract ]
 {
+}
+
+/// Options methods
+Method hasOption(pOption As %String)
+{
+	Return ..Options.%IsDefined(pOption)
+}
+
+Method getOption(pOption As %String)
+{
+	If ('..hasOption(pOption)) {
+		Do ..ValidationError("The option " _ pOption _ " is required for this validator")
+	}
 }
 
 Storage Default
