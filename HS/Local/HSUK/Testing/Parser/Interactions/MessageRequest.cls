@@ -58,11 +58,12 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 
 		Set OSType = $CLASSNAME($PROPERTY(pObj, key))
 		#; w !,"Key " _ key,!
-		#; w "ObjectScript type: "_$CLASSNAME($PROPERTY(pObj, key)),!
+		#; W "ObjectScript value: " _ value,!
+		#; w "ObjectScript type: "_OSType,!
 		#; w "ObjectScript type 2: " _ CollectionType _ "||" _ DataType,!
 		#; w "JSON Type: " _ jsonType,!
 
-		If (OSType = "" && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean"))) {
+		If ((OSType = value) || (OSType = "")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
 			/// Both the JSON and ObjectScript field are primitive data types, simply set the property value
 			Set $PROPERTY(pObj, key) = value
 		} ElseIf (CollectionType = "list") {
@@ -125,7 +126,7 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 			Do ..PopulateObjectFromJSON(.subObj, value)
 		} Else {
 			/// Mismatch or unhandled types between JSON and ObjectScript Object
-			Throw ##class(%Exception.General).%New("Failed to populate message","-313",,"Unknown how to handle types, JSON type: " _ jsonType _ " ObjectScript type: " _ OSType _ ", ObjectScript collection: " _ CollectionType _ ", ObjectScript data type: " _ DataType _ ". JSON: " _ value.%ToJSON())
+			Throw ##class(%Exception.General).%New("Failed to populate message","-313",,"Mismatch of data types - cannot populate message, Key: " _ key _ ", JSON type: " _ jsonType _ " ObjectScript type: " _ OSType _ ", ObjectScript collection: " _ CollectionType _ ", ObjectScript data type: " _ DataType _ ". JSON: " _ value)
 		}
 	}
 }

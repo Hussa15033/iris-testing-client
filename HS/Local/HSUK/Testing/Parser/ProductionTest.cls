@@ -114,7 +114,6 @@ Method ParseAndRunTestSuites() As %Status
 			Do ..SendRequest(targetHostName, requestMessage, .responseMessage, 1)
 
 			/// Now validate the response against what we expect
-			zw responseMessage
 			Set validation = interaction.MessageResponse.ValidateResponse(responseMessage)
 			Return:'$$$ISOK(validation) validation
 		}

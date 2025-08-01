@@ -16,7 +16,7 @@ Method %JSONImportInternal() As %Status
 /// TODO: MOVE THIS TO A UTIL CLASS
 ClassMethod GetPropertyDefinition(pClassname, pProperty, Output Collection As %String, Output Type As %String)
 {
-	Set def = ##class(%Dictionary.PropertyDefinition).%OpenId(pClassname _ "||" _ pProperty)
+	Set def = ##class(%Dictionary.CompiledProperty).%OpenId(pClassname _ "||" _ pProperty)
 	If (def = "") {
 		Throw ##class(%Exception.General).%New("Unable to find property","-77",,"Could not load property definition for property '" _ pProperty _ "' in class '" _ pClassname _ "', property does not exist")
 	}

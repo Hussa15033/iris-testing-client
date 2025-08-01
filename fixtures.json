@@ -17,18 +17,10 @@
                     },
                     "response": {
                         "class": "HS.Local.HSUK.Spine.PDS.Message.GetResponse",
-                        "validators": {
-                            "Patient.PatientID": {
-                                "validator": "ContainsValidator",
-                                "options": {
-                                    "containsText": "Failed"
-                                }
-                            }
-                        },
                         "properties": {
                             "HttpResponseCode": "200",
                             "HttpResponseDescription": "OK",
-                            "Success": "true",
+                            "Success": 1,
                             "Patient": {
                                 "PatientID": "9449306567",
                                 "VersionID": "28",
@@ -60,34 +52,31 @@
                                     "EffectivePeriod": {
                                         "StartDate": "2024-01-17"
                                     },
-                                    "Line": {
-                                        "LineItem": "5 Drury Lane"
-                                    },
+                                    "Line": [
+                                        "5 Drury Lane"
+                                    ],
                                     "PostalCode": "TW2 7TP"
                                 },
                                 "OtherAddresses": {
-                                    "Address": {
+                                    "temp": {
                                         "AddressID": "2D45AFA2",
                                         "Use": "temp",
                                         "EffectivePeriod": {
                                             "StartDate": "2002-12-06",
                                             "EndDate": "2012-11-05"
                                         },
-                                        "Line": {
-                                            "LineItem": [
-                                                "25 Kings Road",
-                                                "Queens Way",
-                                                "Local",
-                                                "Town",
-                                                "Heathrow"
-                                            ]
-                                        },
-                                        "PostalCode": "SW3 8QG",
-                                        "_OtherAddressesKey": "temp"
+                                        "Line": [
+                                            "25 Kings Road",
+                                            "Queens Way",
+                                            "Local",
+                                            "Town",
+                                            "Heathrow"
+                                        ],
+                                        "PostalCode": "SW3 8QG"
                                     }
                                 },
                                 "Telecoms": {
-                                    "Telecom": {
+                                    "home|phone": {
                                         "TelecomID": "30D5DDBA",
                                         "Use": "home",
                                         "System": "phone",
@@ -95,8 +84,7 @@
                                         "EffectivePeriod": {
                                             "StartDate": "2001-01-11",
                                             "EndDate": "2002-01-15"
-                                        },
-                                        "_TelecomsKey": "home|phone"
+                                        }
                                     }
                                 },
                                 "NominatedPharmacy": "FMA45",
@@ -108,9 +96,9 @@
                                 "RemovalFromRegistrationDate": {
                                     "StartDate": "2024-03-20T13:13:03+00:00"
                                 },
-                                "RestrictedPatient": "false"
+                                "RestrictedPatient": 0
                             },
-                            "Superseded": "false"
+                            "Superseded": 0
                         }
                     }
                 }
