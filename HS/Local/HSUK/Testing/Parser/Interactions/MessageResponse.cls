@@ -32,7 +32,11 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 			Set validatorClass = "HS.Local.HSUK.Testing.Parser.Validators." _ value.validator
 			Set validatorOptions = value.options
 
-			Set validator = $CLASSMETHOD(validatorClass, "%New", validatorOptions)
+			Try {
+				Set validator = $CLASSMETHOD(validatorClass, "%New", validatorOptions)
+			} Catch ex {
+				Throw ##class(%Exception.General).%New("Failed to initialise validator","-499",,"The validator class '" _ validatorClass _ "' could not be initialised: " _ ex.Data)
+			}
 			Do message.Validators.SetAt(validator, fieldName)
 		}
 	}
@@ -48,10 +52,6 @@ Method ResolveDotPath(pPath As %String, pObj As Ens.Response)
 	Set splitPaths = $LISTFROMSTRING(pPath,".")
 	Set curObj = pObj
 
-	If (pPath = "OtherAddresses[2].Streets") {
-		Throw ##class(%Exception.General).%New("Path resolve error","-413",,"Field not found within response object of class '" _ $CLASSNAME(pObj) _ "' while attempting to resolve path '" _ pPath _ "'")
-
-	}
 	For i=1:1:$LL(splitPaths) {
 		/// Default values
 		Set fieldName = $LISTGET(splitPaths, i, "")
