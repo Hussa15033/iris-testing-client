@@ -1,4 +1,4 @@
-# Testing Client
+# Auwais' Testing Client
 
 ## Description
 This client is a testing tool to enable test-driven development and validation of productions by allowing you to specify production request/response messages through a JSON schema. This JSON schema is then parsed and all messages are created and replayed through the production and their responses compared with the test definition schema
@@ -7,6 +7,9 @@ This client is a testing tool to enable test-driven development and validation o
 To start with you can 
 
 ## Usage
+### Using as a standalone tool
+
+### Using as part of a CI/CD process
 
 ## Bug Fixes
 -
