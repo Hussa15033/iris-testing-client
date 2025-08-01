@@ -1,6 +1,8 @@
 Class HS.Local.HSUK.Testing.Parser.Validators.TextValidator Extends HS.Local.HSUK.Testing.Parser.Validators.Validator
 {
 
+Parameter VALIDOPTIONS = "equals,contains,beginsWith,endsWith,caseSensitive";
+
 /// Valid options for this TextValidator:
 /// "options": {
 /// 	"contains": ??,
@@ -11,6 +13,7 @@ Class HS.Local.HSUK.Testing.Parser.Validators.TextValidator Extends HS.Local.HSU
 /// }
 /// 
 /// Can specify any combination of the above and they will all be checked
+/// /// Override this method to validate the value, should return a value of 0 (failure) or 1 (success)
 Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(MAXLEN="")) As %Status
 {
 	Set caseSensitive = 1
@@ -48,7 +51,7 @@ Method ValidateText(pMode As %String, pText As %String, pAuxText As %String, pSe
 		Set valid = (pText = pAuxText)
 	} ElseIf pMode = "contains" {
 		Set valid = (pText [ pAuxText)
-	} ElseIf (pMode = "beginsWith") && $L(pAuxText) <= $L(pText) {
+	} ElseIf (pMode = "beginsWith") && ($L(pAuxText) <= $L(pText)) {
 		Set valid = ($EXTRACT(pText, 0, $L(pAuxText)) = pAuxText)
 	} ElseIf (pMode = "endsWith") && ($L(pAuxText) <= $L(pText)) {
 		Set valid = ($EXTRACT(pText, *-($L(pAuxText) - 1), *) = pAuxText)
