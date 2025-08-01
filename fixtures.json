@@ -17,6 +17,18 @@
                     },
                     "response": {
                         "class": "HS.Local.HSUK.Spine.PDS.Message.GetResponse",
+                        "validators": {
+                            "Patient.NHSNumberStatus.CodeSystem": {
+                                "validator": "TextValidator",
+                                "options": {
+                                    "contains": "Verification",
+                                    "endsWith": "Status",
+                                    "beginsWith": "https://",
+                                    "equals": "https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatus",
+                                    "caseSensitive": true
+                                }
+                            }
+                        },
                         "properties": {
                             "HttpResponseCode": "200",
                             "HttpResponseDescription": "OK",

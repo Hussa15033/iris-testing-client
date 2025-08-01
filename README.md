@@ -15,7 +15,8 @@ To start with you can
 -
 
 ## To do
-* Rename "ContainsValidator" to "TextValidator" and update the code as needed, use the examples in the Validators section below
+* [Done] Rename "ContainsValidator" to "TextValidator" and update the code as needed, use the examples in the Validators section below
+* Ensure namespace and production classes are checked properly
 * Restructure files and use the ATT.* package name
 * Finish any "TODOs" within the text documentation
 * Document all classes properly
