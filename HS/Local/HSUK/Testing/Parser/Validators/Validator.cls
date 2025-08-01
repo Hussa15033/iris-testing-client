@@ -1,11 +1,30 @@
 Class HS.Local.HSUK.Testing.Parser.Validators.Validator Extends (%RegisteredObject, %SerialObject) [ Abstract ]
 {
 
+/// A comma separated list of valid options this validator takes, override in your subclass
+Parameter VALIDOPTIONS;
+
 Property Options As %DynamicObject;
 
 Method %OnNew(pOptions As %DynamicObject) As %Status
 {
 	Set ..Options = pOptions
+
+	If (pOptions = "") {
+		Return $$$OK
+	}
+	
+	/// Check only the valid options appear in the options OBJECT
+	Set jsonIter = pOptions.%GetIterator()
+	
+	Set validOptionsList = $LISTFROMSTRING(..#VALIDOPTIONS, ",")
+
+	While jsonIter.%GetNext(.key, .value, .type) {
+		If ($LISTFIND(validOptionsList, key) = 0) {
+			Throw ##class(%Exception.General).%New("Invalid valid operator for '" _ $CLASSNAME() _ "'","-438",,"'" _ key _ "' is not a valid option for this validator")
+		}
+	}
+	
 	Quit $$$OK
 }
 
@@ -38,23 +57,13 @@ Method hasOption(pOption As %String)
 	Return ..Options.%IsDefined(pOption)
 }
 
-Method getOption(pOption As %String)
+Method getOption(pOption As %String) As %String
 {
 	If ('..hasOption(pOption)) {
 		Do ..ValidationError("The option " _ pOption _ " is required for this validator")
 	}
-}
 
-Storage Default
-{
-<Data name="ValidatorState">
-<Value name="1">
-<Value>Options</Value>
-</Value>
-</Data>
-<State>ValidatorState</State>
-<StreamLocation>^HS.Local.HSUK.Te9387.ValidatorS</StreamLocation>
-<Type>%Storage.Serial</Type>
+	Return ..Options.%Get(pOption)
 }
 
 }
