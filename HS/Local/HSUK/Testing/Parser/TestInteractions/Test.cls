@@ -105,7 +105,10 @@ ClassMethod Test()
 	#dim interaction As HS.Local.HSUK.Testing.Parser.Tests.Interaction
 	Set interaction = ..GenerateRequestMessage()
 	Set message = interaction.MessageRequest.GenerateMessageRequest()
-	zw message
+	
+    Set bo = ##class(HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestOperation).SampleCallCM(message, .response)
+    Set sc = interaction.MessageResponse.ValidateResponse(response)
+    $$$ThrowOnError(sc)
     Return message
 }
 

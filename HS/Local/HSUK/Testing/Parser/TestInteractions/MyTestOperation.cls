@@ -27,6 +27,21 @@ Method SampleCall(pRequest As HS.Local.HSUK.Testing.Parser.TestInteractions.MyTe
   Quit $$$OK
 }
 
+ClassMethod SampleCallCM(pRequest As HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestRequest, Output pResponse As HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestResponse) As %Status
+{
+  Set pResponse = ##class(HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestResponse).%New()
+  Set pResponse.Name = pRequest.Name
+  Set pResponse.Gender = pRequest.Gender
+  Set pResponse.Age = pRequest.Age
+  Set pResponse.FavouriteColours = pRequest.FavouriteColours
+  Set pResponse.ContactNumbers = pRequest.ContactNumbers
+  Set pResponse.MainAddress = pRequest.MainAddress
+  Set pResponse.OtherAddresses = pRequest.OtherAddresses
+  Set pResponse.NamedAddresses = pRequest.NamedAddresses
+
+  Quit $$$OK
+}
+
 XData MessageMap
 {
 <MapItems>
