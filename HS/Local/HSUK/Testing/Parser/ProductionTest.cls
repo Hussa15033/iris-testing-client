@@ -3,74 +3,94 @@
 /// It has native methods to send messages within the production and allows all test cases to run
 /// these methods
 /// 
-Class HS.Local.HSUK.Testing.Spine.ProductionTest Extends %UnitTest.TestProduction
+Class APTT.ProductionTester Extends %UnitTest.TestProduction
 {
 
 /// The production to test, this is determined at Runtime so a default value of "None" is specified
 Parameter PRODUCTION As CONFIGVALUE = "None";
 
+/// The directory holding our Test Definition files.
+Parameter TESTDEFINITIONDIRECTORY As CONFIGVALUE = "None";
+
 /// We do not want to ignore any errors in production
 Parameter IGNOREPRODUCTIONERRORS = 0;
 
-Parameter TestSuites As CONFIGVALUE;
+Property Suites As list Of APTT.Tests.TestSuite;
 
-ClassMethod Run(pProductionName As %String, pTestSuite) As %Status
+Property TotalTests As %Integer [ InitialExpression = 0 ];
+
+Property SuccessfulTests As %Integer [ InitialExpression = 0 ];
+
+Property RanTests As %Integer [ InitialExpression = 0 ];
+
+ClassMethod Run(pFileDirectory, pProduction) As %Status
 {
-	Set ^UnitTestRoot = "/"
+	Set ^UnitTestRoot = pFileDirectory
 
-	Write "Running Tests...."
-
-	Set validTests = 0
-
-	/// TODO: Make this work for a list of testSuites rather than just 1
-	#; For i=1:1:$LL(pTestSuites) {
-	#; 	Write !,!,!
-	#; 	Write "Finding test suite " _ i,!,!
-	#; 	#dim testSuite As HS.Local.HSUK.Testing.Parser.Tests.TestSuite
-	#; 	Set testSuite = $LG(pTestSuites, "")
-	#; 	Write "TestSuite contains..."
-	#; 	Write testSuite.SourceFile
-	#; 	zw testSuite
-	#; 	w testSuite.%Extends("ew.ew.ew")
-	#; 	W testSuite.%IsA("Test")
-	#; 	If ($LG(pTestSuites, i).%IsA("HS.Local.HSUK.Testing.Parser.Tests.TestSuite")) {
-	#; 		Set validTests = validTests + 1
-	#; 	}
-	#; }
-
-	#; If (validTests '= $LL(pTestSuites)) {
-	#; 	Throw ##class(%Exception.General).%New("Invalid test suites","-483",,"One or more test suites provided to the Production Tester is invalid. Please ensure all test suites subclass the TestSuite class.")
-	#; }
-
+	/// Update runtime parameters
 	/// Update the PRODUCTION parameter at runtime
-	Set tSC = $System.OBJ.UpdateConfigParam($CLASSNAME(), "PRODUCTION", pProductionName)
+	Set tSC = $System.OBJ.UpdateConfigParam($CLASSNAME(), "PRODUCTION", pProduction)
 	$$$ThrowOnError(tSC)
 
-	Set tSC = $System.OBJ.UpdateConfigParam($CLASSNAME(), "TestSuites", pTestSuite)
+	/// Update the TESTDEFINITIONDIRECTORY at runtime
+	Set tSC = $System.OBJ.UpdateConfigParam($CLASSNAME(), "TESTDEFINITIONDIRECTORY", pFileDirectory)
 	$$$ThrowOnError(tSC)
+	
 	// Run the super Run() method
 	Do ##super()
 }
 
-Method OnAfterProductionStart() As %Status
+Method OnBeforeProductionStart() As %Status
 {
-	Return ..ParseAndRunTestSuites()
+	Do ##class(APTT.Utils).Log("Running parser on directory '" _ ..#TESTDEFINITIONDIRECTORY _ "'", "Init")
+	Try {
+		Set totalTests = 0
+		Set ..Suites = ##class(APTT.Parser).Parse(..#TESTDEFINITIONDIRECTORY, ..#PRODUCTION, .totalTests)
+		Set ..TotalTests = totalTests
+	} Catch ex {
+		Set tSC = $System.Status.Error("Parsing Error", ex.Data)
+		Do ..LogErrors(tSC, "onBeforeProductionStop() while parsing")
+		Return tSC
+	}
+
+	Quit $$$OK
 }
 
-Method ParseAndRunTestSuites() As %Status
+Method OnAfterProductionStart() As %Status
+{
+	Set sKey = ..Suites.Next("")
+	While sKey '= "" {
+		Set testSuite = ..Suites.GetAt(sKey)
+		Do ..RunOneTestSuite(testSuite)
+		Set sKey = ..Suites.Next(sKey)
+	}
+
+	Quit $$$OK
+}
+
+Method OnAfterProductionStop() As %Status
+{
+Ra
+	Do ..LogMessage("Total of " _ ..SuccessfulTests _ "/" _ ..TotalTests _ " tests were successful out of " _ ..RanTests _ " tests ran")
+
+	Do $$$AssertEquals(..SuccessfulTests, ..TotalTests)
+	Do $$$AssertEquals(..RanTests, ..TotalTests)
+
+	Quit $$$OK
+}
+
+Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status
 {
 	/// TODO:
 	/// 	KEY POINT: USE ..LOGERRORS FOR NON-FATAL ERRORS OTHERWISE RETURN AN ERROR
 	///				   STATUS CODE IF THE ERROR IS FATAL
-	Set ts = ##class(HS.Local.HSUK.Testing.Parser.Parse).Run("")
-
-	Do ..LogMessage("Running test definition file '" _ ts.SourceFile _ "'")
+	Do ..LogMessage("Running test definition file '" _ pTestSuite.SourceFile _ "'")
 	
 	/// Attempt to run all messages within this production
-	Set tc = ts
-	For i=1:1:ts.TestCases.Size {
+	Set tc = pTestSuite
+	For i=1:1:pTestSuite.TestCases.Size {
 		#dim testCase As HS.Local.HSUK.Testing.Parser.Tests.TestCase
-		Set testCase = ts.TestCases.GetAt(i)
+		Set testCase = pTestSuite.TestCases.GetAt(i)
 
 		Set targetHostName = testCase.TargetHostName
 		Set targetHostClass = testCase.TargetHostClass
@@ -106,6 +126,8 @@ Method ParseAndRunTestSuites() As %Status
 			#dim interaction As HS.Local.HSUK.Testing.Parser.Tests.Interaction
 			Set interaction = testCase.Interactions.GetAt(j)
 
+			Set ..RanTests = ..RanTests + 1
+
 			/// Generate the Ens.Request message we will be sending into the
 			/// production
 			Set requestMessage = interaction.MessageRequest.GenerateMessageRequest()
@@ -116,6 +138,8 @@ Method ParseAndRunTestSuites() As %Status
 			/// Now validate the response against what we expect
 			Set validation = interaction.MessageResponse.ValidateResponse(responseMessage)
 			Return:'$$$ISOK(validation) validation
+
+			Set ..SuccessfulTests = ..SuccessfulTests + 1
 		}
 	}
 

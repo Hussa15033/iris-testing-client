@@ -1,4 +1,4 @@
-Class HS.Local.HSUK.Testing.Parser.Tests.TestSuite Extends (%SerialObject, %JSON.Adaptor)
+Class APTT.Tests.TestSuite Extends (%SerialObject, %JSON.Adaptor)
 {
 
 Property SourceFile As %String(%JSONINCLUDE = "none");
@@ -47,7 +47,7 @@ Storage Default
 </Value>
 </Data>
 <State>TestSuiteState</State>
-<StreamLocation>^HS.Local.HSUK.TeAC16.TestSuiteS</StreamLocation>
+<StreamLocation>^APTT.Tests.TestSuiteS</StreamLocation>
 <Type>%Storage.Serial</Type>
 }
 
