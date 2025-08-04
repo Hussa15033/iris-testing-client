@@ -1,4 +1,4 @@
-Class HS.Local.HSUK.Testing.Parser.Tests.TestCase Extends (%SerialObject, %JSON.Adaptor)
+Class APTT.Definition.TestCase Extends (%SerialObject, %JSON.Adaptor)
 {
 
 Parameter %JSONENABLED = 1;
@@ -7,9 +7,7 @@ Property TargetHostName As %String(%JSONFIELDNAME = "name", MAXLEN = "");
 
 Property TargetHostClass As %String(%JSONFIELDNAME = "class", MAXLEN = "");
 
-Property Interactions As list Of HS.Local.HSUK.Testing.Parser.Tests.Interaction(%JSONFIELDNAME = "interactions");
-
-// Property Interactions As list Of HS.Local.HSUK.Testing.Parser.Tests.Interaction(%JSONFIELDNAME = "interactions");
+Property Interactions As list Of APTT.Definition.Interaction(%JSONFIELDNAME = "interactions");
 
 /// Runs the test suite, this will run all interactions against the TargetHost.
 /// Verifies that the TargetHost has the TargetHostClass as it's class name
@@ -41,14 +39,6 @@ Method RunTestsOnProduction(pProduction As Ens.Config.Production)
 	#; W host
 }
 
-Method RunInteraction(pHost As Ens.Config.Item, pInteraction As HS.Local.HSUK.Testing.Parser.Tests.Interaction) [ Private ]
-{
-	/// Send the MessageRequest from the interaction and validate the response
-	Write "Running an interaction..."
-	Set messageRequest = pInteraction.MessageRequest
-	Set messageResponse = pInteraction.MessageResponse
-}
-
 Storage Default
 {
 <Data name="TestCaseState">
@@ -63,7 +53,7 @@ Storage Default
 </Value>
 </Data>
 <State>TestCaseState</State>
-<StreamLocation>^HS.Local.HSUK.TesAC16.TestCaseS</StreamLocation>
+<StreamLocation>^APTT.Definition.TestCaseS</StreamLocation>
 <Type>%Storage.Serial</Type>
 }
 

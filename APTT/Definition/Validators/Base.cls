@@ -1,4 +1,4 @@
-Class HS.Local.HSUK.Testing.Parser.Validators.Validator Extends (%RegisteredObject, %SerialObject) [ Abstract ]
+Class APTT.Definition.Validators.Base Extends (%RegisteredObject, %SerialObject) [ Abstract ]
 {
 
 /// A comma separated list of valid options this validator takes, override in your subclass

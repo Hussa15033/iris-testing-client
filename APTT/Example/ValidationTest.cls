@@ -1,13 +1,13 @@
-Class HS.Local.HSUK.Testing.Parser.TestInteractions.Test Extends %RegisteredObject
+Class APTT.Example.ValidationTest Extends %RegisteredObject
 {
 
-ClassMethod GenerateRequestMessage() As HS.Local.HSUK.Testing.Parser.Tests.Interaction
+ClassMethod GenerateRequestMessage() As APTT.Definition.Interaction
 {
-		Set a = ##class(HS.Local.HSUK.Testing.Parser.Tests.Interaction).%New()
+		Set a = ##class(APTT.Definition.Interaction).%New()
 		Do a.%JSONImport(
 			{
                     "request": {
-                        "class": "HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestRequest",
+                        "class": "APTT.Definition.Request",
                         "properties": {
                             "Name": "OtherUser",
                             "Gender": "M",
@@ -47,7 +47,7 @@ ClassMethod GenerateRequestMessage() As HS.Local.HSUK.Testing.Parser.Tests.Inter
                         }
                     },
                     "response": {
-                        "class": "HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestResponse",
+                        "class": "APTT.Example.Response",
                         "validators": {
                             "Name": {
                                 "validator": "ContainsValidator",
@@ -102,11 +102,11 @@ ClassMethod GenerateRequestMessage() As HS.Local.HSUK.Testing.Parser.Tests.Inter
 
 ClassMethod Test()
 {
-	#dim interaction As HS.Local.HSUK.Testing.Parser.Tests.Interaction
+	#dim interaction As APTT.Definition.Interaction
 	Set interaction = ..GenerateRequestMessage()
 	Set message = interaction.MessageRequest.GenerateMessageRequest()
 	
-    Set bo = ##class(HS.Local.HSUK.Testing.Parser.TestInteractions.MyTestOperation).SampleCallCM(message, .response)
+    Set bo = ##class(APTT.Example.Operation).SampleCallCM(message, .response)
     Set sc = interaction.MessageResponse.ValidateResponse(response)
     $$$ThrowOnError(sc)
 

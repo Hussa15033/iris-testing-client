@@ -1,4 +1,4 @@
-Class HS.Local.HSUK.Testing.Parser.Interactions.Message Extends %SerialObject [ Abstract ]
+Class APTT.Definition.Messages.Message Extends %SerialObject [ Abstract ]
 {
 
 /// The type of message this is, should be either Ens.Request or Ens.Response
@@ -58,7 +58,7 @@ Storage Default
 </Value>
 </Data>
 <State>MessageState</State>
-<StreamLocation>^HS.Local.HSUK.TestB95F.MessageS</StreamLocation>
+<StreamLocation>^APTT.Definition.MeA057.MessageS</StreamLocation>
 <Type>%Storage.Serial</Type>
 }
 

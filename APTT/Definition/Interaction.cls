@@ -1,0 +1,23 @@
+Class APTT.Definition.Interaction Extends (%SerialObject, %JSON.Adaptor)
+{
+
+Property MessageRequest As APTT.Definition.Messages.MessageRequest(%JSONFIELDNAME = "request");
+
+Property MessageResponse As APTT.Definition.Messages.MessageResponse(%JSONFIELDNAME = "response");
+
+Storage Default
+{
+<Data name="InteractionState">
+<Value name="1">
+<Value>MessageRequest</Value>
+</Value>
+<Value name="2">
+<Value>MessageResponse</Value>
+</Value>
+</Data>
+<State>InteractionState</State>
+<StreamLocation>^APTT.Definition.InteractionS</StreamLocation>
+<Type>%Storage.Serial</Type>
+}
+
+}

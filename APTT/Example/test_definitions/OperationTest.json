@@ -1,0 +1,97 @@
+{
+    "production": "APTT.Example.Product",
+    "namespace": "NHSINTERFACES",
+    "tests": [
+        {
+            "name": "TestOperation",
+            "class": "APTT.Example.Operation",
+            "interactions": [
+                {
+                    "request": {
+                        "class": "APTT.Example.Request",
+                        "properties": {
+                            "Name": "Testing",
+                            "Gender": "M",
+                            "FavouriteColours": [
+                                "Blue",
+                                "Green",
+                                "Red"
+                            ],
+                            "MainAddress": {
+                                "HouseNumber": 55,
+                                "Streets": [
+                                    "Street1",
+                                    "Street2"
+                                ]
+                            },
+                            "OtherAddresses": [
+                                {
+                                    "HouseNumber": 66,
+                                    "Streets": [
+                                        "Street3"
+                                    ]
+                                }
+                            ],
+                            "NamedAddresses": {
+                                "Main": {
+                                    "HouseNumber": 33,
+                                    "Streets": [
+                                        "Street 4"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "response": {
+                        "class": "APTT.Example.Response",
+                        "validators": {
+                            "Name": {
+                                "validator": "ContainsValidator",
+                                "options": {
+                                    "containsText": "rUs"
+                                }
+                            },
+                            "OtherAddresses[0].Streets[0]": {
+                                "validator": "ContainsValidator",
+                                "options": {
+                                    "containsText": "eet3"
+                                }
+                            }
+                        },
+                        "properties": {
+                            "Name": "OtherUser",
+                            "FavouriteColours": [
+                                "Blue",
+                                "Green",
+                                "Red"
+                            ],
+                            "MainAddress": {
+                                "HouseNumber": 55,
+                                "Streets": [
+                                    "Street1",
+                                    "Street2"
+                                ],
+                                "OtherAddresses": [
+                                    {
+                                        "HouseNumber": 66,
+                                        "Streets": [
+                                            "Street3"
+                                        ]
+                                    }
+                                ],
+                                "NamedAddresses": {
+                                    "Main": {
+                                        "HouseNumber": 33,
+                                        "Streets": [
+                                            "Street 4"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

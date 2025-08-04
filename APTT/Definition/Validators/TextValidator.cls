@@ -1,4 +1,4 @@
-Class HS.Local.HSUK.Testing.Parser.Validators.TextValidator Extends HS.Local.HSUK.Testing.Parser.Validators.Validator
+Class APTT.Definition.Validators.TextValidator Extends APTT.Definition.Validators.Base
 {
 
 Parameter VALIDOPTIONS = "equals,contains,beginsWith,endsWith,caseSensitive";

@@ -1,9 +1,9 @@
-Class HS.Local.HSUK.Testing.Parser.Interactions.MessageResponse Extends HS.Local.HSUK.Testing.Parser.Interactions.Message
+Class APTT.Definition.Messages.MessageResponse Extends APTT.Definition.Messages.Message
 {
 
 Parameter MESSAGECLASS = "Ens.Response";
 
-Property Validators As array Of HS.Local.HSUK.Testing.Parser.Validators.Validator;
+Property Validators As array Of APTT.Definition.Validators.Base;
 
 /// For some reason the parent object is passed into p1
 /// Ensure the "response" field is the %JSONFIELDNAME of Interaction.MessageRequest
@@ -29,7 +29,7 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 		/// options
 		While (iter.%GetNext(.key, .value, .type)) {
 			Set fieldName = key
-			Set validatorClass = "HS.Local.HSUK.Testing.Parser.Validators." _ value.validator
+			Set validatorClass = "APTT.Definition.Validators." _ value.validator
 			Set validatorOptions = value.options
 
 			Try {
@@ -193,7 +193,7 @@ Method ValidateResponse(pResponse As Ens.Response) As %Status
 		Set expectedValue = JSONPaths.GetAt(path)
 		If '..Validators.IsDefined(path) {
 			/// If no validator is specified for this path, we use the default validator
-			Set validator = ##class(HS.Local.HSUK.Testing.Parser.Validators.EqualsValidator).%New("")
+			Set validator = ##class(APTT.Definition.Validators.EqualsValidator).%New("")
 			Do ..Validators.SetAt(validator, path)
 		}
 

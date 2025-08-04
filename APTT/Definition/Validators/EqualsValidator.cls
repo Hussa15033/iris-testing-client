@@ -2,7 +2,7 @@
 /// The default and most basic validator.
 /// 
 /// It checks to ensure the expected value and the actual value match, no options are expected
-Class HS.Local.HSUK.Testing.Parser.Validators.EqualsValidator Extends HS.Local.HSUK.Testing.Parser.Validators.Validator
+Class APTT.Definition.Validators.EqualsValidator Extends APTT.Definition.Validators.Base
 {
 
 Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(MAXLEN="")) As %Status

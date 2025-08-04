@@ -1,4 +1,4 @@
-Class HS.Local.HSUK.Testing.Parser.TestInteractions.Address Extends (%SerialObject, %XML.Adaptor)
+Class APTT.Example.Model.Address Extends (%SerialObject, %XML.Adaptor)
 {
 
 Property HouseNumber As %Integer;
@@ -12,14 +12,11 @@ Storage Default
 <Value>HouseNumber</Value>
 </Value>
 <Value name="2">
-<Value>Street</Value>
-</Value>
-<Value name="3">
 <Value>Streets</Value>
 </Value>
 </Data>
 <State>AddressState</State>
-<StreamLocation>^HS.Local.HSUK.Test4FC5.AddressS</StreamLocation>
+<StreamLocation>^APTT.Example.Model.AddressS</StreamLocation>
 <Type>%Storage.Serial</Type>
 }
 

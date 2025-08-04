@@ -1,7 +1,21 @@
 /// 
-/// This class is the main class that enables testing of the production.
-/// It has native methods to send messages within the production and allows all test cases to run
-/// these methods
+/// Auwais's Production Testing Tool
+/// 
+/// The main entry point for the APTT utility
+/// 
+/// This class is the main class that enables testing of the production. It will load all of your
+/// test definition files and play back the interactions stored within the JSON file
+/// 
+/// All messages will automatically be created on the fly, you do not need to
+/// extend your request or response messages from the %JSON.Adaptor class
+/// 
+/// To run this tester:
+/// 	- Create a directory with all of your test definition files
+/// 	- Run with
+/// 		Do ##class(APTT.ProductionTester).Run("/path/to/your/test/definitions/directory", "<your production name>")
+/// 
+/// @author Auwais Hussain
+/// @version 0.6
 /// 
 Class APTT.ProductionTester Extends %UnitTest.TestProduction
 {
@@ -27,7 +41,7 @@ ClassMethod Run(pFileDirectory, pProduction) As %Status
 {
 	Set dir = ##class(%File).%New(pFileDirectory)
 	If ('##class(%File).DirectoryExists(pFileDirectory)) {
-		Do ##class(APTT.Utils).Log("Directory '" _ pFileDirectory _ "' does not exist.. exiting", "ERROR")
+		Write "[ERROR]: " _ "Directory '" _ pFileDirectory _ "' does not exist.. exiting"
 		Return $System.Status.Error("InitFailed", "Specified directory '" _ pFileDirectory _ "' does not exist")
 	}
 
@@ -43,7 +57,8 @@ ClassMethod Run(pFileDirectory, pProduction) As %Status
 	$$$ThrowOnError(tSC)
 	
 	// Run the super Run() method
-	Do ##super()
+	Set tSC = ##super()
+	Quit tSC
 }
 
 Method OnBeforeProductionStart() As %Status
@@ -59,12 +74,15 @@ Method OnBeforeProductionStart() As %Status
 Method OnAfterProductionStart() As %Status
 {
 	Set sKey = ..Suites.Next("")
+	Set ok = 1
 	While sKey '= "" {
 		Set testSuite = ..Suites.GetAt(sKey)
-		Do ..RunOneTestSuite(testSuite)
+		Set st = ..RunOneTestSuite(testSuite)
+		Set:'$$$ISOK(st) ok = 0
 		Set sKey = ..Suites.Next(sKey)
 	}
 
+	Return:ok=0 $System.Status.Error(6133, "One or more tests have failed")
 	Quit $$$OK
 }
 
@@ -79,6 +97,9 @@ Ra
 	Quit $$$OK
 }
 
+/// Run the parser for a directory of .JSON test files
+/// These files MUST end in ".json" to be picked up by this test utility
+/// <property>pFileDirectory</property> - The directory in the file system which holds the .json test definitions
 Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 {
 	Set stmt = ##class(%SQL.Statement).%New()
@@ -135,11 +156,13 @@ Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private 
 	/// Attempt to run all messages within this production
 	Set tc = pTestSuite
 	For i=1:1:pTestSuite.TestCases.Size {
-		#dim testCase As HS.Local.HSUK.Testing.Parser.Tests.TestCase
+		#dim testCase As APTT.Definition.TestCase
 		Set testCase = pTestSuite.TestCases.GetAt(i)
-
+		
 		Set targetHostName = testCase.TargetHostName
 		Set targetHostClass = testCase.TargetHostClass
+
+		Do ..LogMessage("  Running tests for host " _ targetHostName)
 		
 		/// Attempt to find the target host this test is for
 		Set prod = ##class(Ens.Config.Production).%OpenId(..#PRODUCTION,,.tSC)
@@ -169,32 +192,33 @@ Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private 
 		Set interactions = testCase.Interactions
 
 		For j=1:1:testCase.Interactions.Size {
-			#dim interaction As HS.Local.HSUK.Testing.Parser.Tests.Interaction
-			Set interaction = testCase.Interactions.GetAt(j)
-
+			Do ..LogMessage("    Running interaction " _ j)
 			Set ..RanTests = ..RanTests + 1
+
+			#dim interaction As APTT.Definition.Interaction
+			Set interaction = testCase.Interactions.GetAt(j)
 
 			/// Generate the Ens.Request message we will be sending into the
 			/// production
-			Set requestMessage = interaction.MessageRequest.GenerateMessageRequest()
+			Try {
+				Do ..LogMessage("      Generating request message " _ interaction.MessageRequest.ClassName _ "...")
+				Set requestMessage = interaction.MessageRequest.GenerateMessageRequest()
 
-			/// Send the message into the production
-			Do ..SendRequest(targetHostName, requestMessage, .responseMessage, 1)
+				/// Send the message into the production
+				Do ..LogMessage("      Sending request to " _ targetHostName)
+				Do ..SendRequest(targetHostName, requestMessage, .responseMessage, 1)
 
-			/// Now validate the response against what we expect
-			Set validation = interaction.MessageResponse.ValidateResponse(responseMessage)
-			Return:'$$$ISOK(validation) validation
-
-			Set ..SuccessfulTests = ..SuccessfulTests + 1
+				/// Now validate the response against what we expect
+				Set validation = interaction.MessageResponse.ValidateResponse(responseMessage)
+				Set:$$$ISOK(validation) ..SuccessfulTests = ..SuccessfulTests + 1
+				Do ..LogMessage("      Response message is valid")
+			} Catch ex {
+				Do ..LogMessage("      Error occurred while running tests:" _ ex.DisplayString())
+			}
 		}
 	}
 
 	Quit $$$OK
-	#; Do pHost.Mess
-	#; Set p = ##class(HS.Local.HSUK.Testing.PDS.ProductionTest).%New("")
-	#; Do p.SendRequest(..TargetHostName, messageObj, .response, 1)
-
-	#; Do $$$AssertFailure("TEST")
 }
 
 }

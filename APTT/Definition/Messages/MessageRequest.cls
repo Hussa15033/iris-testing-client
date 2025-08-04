@@ -1,4 +1,4 @@
-Class HS.Local.HSUK.Testing.Parser.Interactions.MessageRequest Extends HS.Local.HSUK.Testing.Parser.Interactions.Message
+Class APTT.Definition.Messages.MessageRequest Extends APTT.Definition.Messages.Message
 {
 
 Parameter MESSAGECLASS = "Ens.Request";

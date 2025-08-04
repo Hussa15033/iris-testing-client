@@ -7,7 +7,7 @@ Property TargetProduction As %String(%JSONFIELDNAME = "production");
 
 Property TargetNamespace As %String(%JSONFIELDNAME = "namespace");
 
-Property TestCases As list Of HS.Local.HSUK.Testing.Parser.Tests.TestCase(%JSONFIELDNAME = "tests");
+Property TestCases As list Of APTT.Definition.TestCase(%JSONFIELDNAME = "tests");
 
 Method RunTests() As %Status
 {
