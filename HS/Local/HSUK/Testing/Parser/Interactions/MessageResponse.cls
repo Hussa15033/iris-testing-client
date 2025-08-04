@@ -35,7 +35,7 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 			Try {
 				Set validator = $CLASSMETHOD(validatorClass, "%New", validatorOptions)
 			} Catch ex {
-				Throw ##class(%Exception.General).%New("Failed to initialise validator","-499",,"The validator class '" _ validatorClass _ "' could not be initialised: " _ ex.Data)
+				Throw ##class(%Exception.General).%New("Failed to initialise validator","-499",,"The validator class '" _ validatorClass _ "' could not be initialised: " _ ex.DisplayString())
 			}
 			Do message.Validators.SetAt(validator, fieldName)
 		}
@@ -208,7 +208,7 @@ Method ValidateResponse(pResponse As Ens.Response) As %Status
 			Set tSC = validator.Validate(expectedValue, actualValue)
 			$$$ThrowOnError(tSC)
 		} Catch ex {
-			Set ex.Data = "Failed validation on field " _ path _ ": " _ ex.Data
+			Set ex.Data = "Failed validation on field " _ path _ ": " _ ex.DisplayString()
 			Throw ex
 		}
 

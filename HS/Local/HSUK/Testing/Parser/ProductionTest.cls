@@ -25,6 +25,12 @@ Property RanTests As %Integer [ InitialExpression = 0 ];
 
 ClassMethod Run(pFileDirectory, pProduction) As %Status
 {
+	Set dir = ##class(%File).%New(pFileDirectory)
+	If ('##class(%File).DirectoryExists(pFileDirectory)) {
+		Do ##class(APTT.Utils).Log("Directory '" _ pFileDirectory _ "' does not exist.. exiting", "ERROR")
+		Return $System.Status.Error("InitFailed", "Specified directory '" _ pFileDirectory _ "' does not exist")
+	}
+
 	Set ^UnitTestRoot = pFileDirectory
 
 	/// Update runtime parameters
@@ -42,16 +48,10 @@ ClassMethod Run(pFileDirectory, pProduction) As %Status
 
 Method OnBeforeProductionStart() As %Status
 {
-	Do ##class(APTT.Utils).Log("Running parser on directory '" _ ..#TESTDEFINITIONDIRECTORY _ "'", "Init")
-	Try {
-		Set totalTests = 0
-		Set ..Suites = ##class(APTT.Parser).Parse(..#TESTDEFINITIONDIRECTORY, ..#PRODUCTION, .totalTests)
-		Set ..TotalTests = totalTests
-	} Catch ex {
-		Set tSC = $System.Status.Error("Parsing Error", ex.Data)
-		Do ..LogErrors(tSC, "onBeforeProductionStop() while parsing")
-		Return tSC
-	}
+	Do ..LogMessage("Loading test definition files from directory '" _ ..#TESTDEFINITIONDIRECTORY _ "'")
+	Set tSC = ..LoadTestDefinitionFiles(..#TESTDEFINITIONDIRECTORY)
+	Return:'$$$ISOK(tSC) tSC
+
 
 	Quit $$$OK
 }
@@ -79,7 +79,53 @@ Ra
 	Quit $$$OK
 }
 
-Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status
+Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
+{
+	Set stmt = ##class(%SQL.Statement).%New()
+	Set st = stmt.%PrepareClassQuery("%File", "FileSet")
+	Return:'$$$ISOK(st) st
+
+	Set rSet = stmt.%Execute(pFileDirectory, "*.json")
+	If (rSet.%SQLCODE '= 0) {
+		Set tSC = $System.Status.Error("File Query ERROR", "Could not query directory for files: '" _ pFileDirectory _ "'")
+		Do ..LogErrors(tSC, "File query failed, SQL CODE=" _ rSet.%SQLCOD _ ", MESSAGE=" _ rSet.%Message)
+		Return tSC
+	}
+
+	While rSet.%Next() {
+		Try {
+			Set path = ##class(%File).NormalizeFilename(rSet.%Get("Name"))
+			Set testSuite = ##class(APTT.Parser).LoadFileAsTestSuite(path)
+
+			/// Throw errors if any of the test definition files have a different target namespace or production
+			Throw:testSuite.TargetNamespace'=$NAMESPACE ##class(%Exception.General).%New("Incorrect namespace","-93",,"The namespace specified '" _ testSuite.TargetNamespace _ "' is different to the selected namespace '" _ $NAMESPACE _ "'. Ensure all test definition files have the same target namespace")
+			Throw:testSuite.TargetProduction'=..#PRODUCTION ##class(%Exception.General).%New("Incorrect production","-93",,"The production specified '" _ testSuite.TargetProduction _ "' is different to the selected production '" _ ..#PRODUCTION _ "'. Ensure all test definition files have the same target production")
+
+			Do ..Suites.Insert(testSuite)
+
+			/// TODO: Find a more elegant way to obtain a total test count, maybe even move this whole method to the
+			/// Count how many test cases there are
+			Set tKey = testSuite.TestCases.Next("")
+			While tKey '= "" {
+				Set ..TotalTests = ..TotalTests + testSuite.TestCases.GetAt(tKey).Interactions.Size
+				Set tKey = testSuite.TestCases.Next(tKey)
+			}
+		} Catch ex {
+			Set tSC = $System.Status.Error(5030, ex.DisplayString())
+			Return tSC
+		}
+	}
+	
+	If ..Suites.Size = 0 {
+		Do ..LogMessage("No test suites found")
+	} Else {
+		Do ..LogMessage("Identified " _ ..Suites.Size _ " test suites to run")
+	}
+
+	Return $$$OK
+}
+
+Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private ]
 {
 	/// TODO:
 	/// 	KEY POINT: USE ..LOGERRORS FOR NON-FATAL ERRORS OTHERWISE RETURN AN ERROR
