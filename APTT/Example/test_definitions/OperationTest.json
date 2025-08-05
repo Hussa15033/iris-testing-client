@@ -63,7 +63,7 @@
                             "Name": "r",
                             "FavouriteColours": [
                                 "Blue",
-                                ["Green"]
+                                "Green"
                             ],
                             "MainAddress": {
                                 "HouseNumber": 55,
