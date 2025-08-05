@@ -135,6 +135,8 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 			Set path = ##class(%File).NormalizeFilename(rSet.%Get("Name"))
 			Set testSuite = ##class(APTT.Parser).LoadFileAsTestSuite(path)
 
+			Do ..LogMessage("---->Loaded " _ ##class(%File).GetFilename(path) _ "..")
+
 			/// Throw errors if any of the test definition files have a different target namespace or production
 			Throw:testSuite.TargetNamespace'=$NAMESPACE ##class(%Exception.General).%New("Incorrect namespace","-93",,"The namespace specified '" _ testSuite.TargetNamespace _ "' is different to the selected namespace '" _ $NAMESPACE _ "'. Ensure all test definition files have the same target namespace")
 			Throw:testSuite.TargetProduction'=..#PRODUCTION ##class(%Exception.General).%New("Incorrect production","-93",,"The production specified '" _ testSuite.TargetProduction _ "' is different to the selected production '" _ ..#PRODUCTION _ "'. Ensure all test definition files have the same target production")
