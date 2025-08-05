@@ -22,7 +22,7 @@ Method TestCall(pRequest As APTT.Example.Request, Output pResponse As APTT.Examp
 ClassMethod TestCallCM(pRequest As APTT.Example.Request, Output pResponse As APTT.Example.Response) As %Status
 {
   Set pResponse = ##class(APTT.Example.Response).%New()
-  Set pResponse.Name = pRequest.Name
+  Set pResponse.Name = "OtherUser"
   Set pResponse.Gender = pRequest.Gender
   Set pResponse.Age = pRequest.Age
   Set pResponse.FavouriteColours = pRequest.FavouriteColours

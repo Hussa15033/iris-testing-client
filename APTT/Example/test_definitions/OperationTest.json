@@ -1,12 +1,13 @@
 {
-    "production": "APTT.Example.Product",
+    "production": "APTT.Example.Production",
     "namespace": "NHSINTERFACES",
     "tests": [
         {
-            "name": "TestOperation",
+            "name": "MyOperation",
             "class": "APTT.Example.Operation",
             "interactions": [
                 {
+                    "name": "Test Example Request",
                     "request": {
                         "class": "APTT.Example.Request",
                         "properties": {
@@ -46,15 +47,15 @@
                         "class": "APTT.Example.Response",
                         "validators": {
                             "Name": {
-                                "validator": "ContainsValidator",
+                                "validator": "TextValidator",
                                 "options": {
-                                    "containsText": "rUs"
+                                    "contains": "rUs"
                                 }
                             },
                             "OtherAddresses[0].Streets[0]": {
-                                "validator": "ContainsValidator",
+                                "validator": "TextValidator",
                                 "options": {
-                                    "containsText": "eet3"
+                                    "contains": "ee3"
                                 }
                             }
                         },
@@ -62,30 +63,29 @@
                             "Name": "OtherUser",
                             "FavouriteColours": [
                                 "Blue",
-                                "Green",
-                                "Red"
+                                "Green"
                             ],
                             "MainAddress": {
                                 "HouseNumber": 55,
                                 "Streets": [
                                     "Street1",
                                     "Street2"
-                                ],
-                                "OtherAddresses": [
-                                    {
-                                        "HouseNumber": 66,
-                                        "Streets": [
-                                            "Street3"
-                                        ]
-                                    }
-                                ],
-                                "NamedAddresses": {
-                                    "Main": {
-                                        "HouseNumber": 33,
-                                        "Streets": [
-                                            "Street 4"
-                                        ]
-                                    }
+                                ]
+                            },
+                            "OtherAddresses": [
+                                {
+                                    "HouseNumber": 66,
+                                    "Streets": [
+                                        "Street3"
+                                    ]
+                                }
+                            ],
+                            "NamedAddresses": {
+                                "Main": {
+                                    "HouseNumber": 33,
+                                    "Streets": [
+                                        "Street 4"
+                                    ]
                                 }
                             }
                         }
