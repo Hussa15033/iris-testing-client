@@ -7,7 +7,7 @@ ClassMethod GenerateRequestMessage() As APTT.Definition.Interaction
 		Do a.%JSONImport(
 			{
                     "request": {
-                        "class": "APTT.Definition.Request",
+                        "class": "APTT.Example.Request",
                         "properties": {
                             "Name": "OtherUser",
                             "Gender": "M",
@@ -50,15 +50,15 @@ ClassMethod GenerateRequestMessage() As APTT.Definition.Interaction
                         "class": "APTT.Example.Response",
                         "validators": {
                             "Name": {
-                                "validator": "ContainsValidator",
+                                "validator": "TextValidator",
                                 "options": {
-                                    "containsText": "rUs"
+                                    "contains": "rUs"
                                 }
                             },
                             "OtherAddresses[0].Streets[0]": {
-                                "validator": "ContainsValidator",
+                                "validator": "TextValidator",
                                 "options": {
-                                    "containsText": "eet3"
+                                    "contains": "eet3"
                                 }
                             }
                         },
@@ -106,9 +106,10 @@ ClassMethod Test()
 	Set interaction = ..GenerateRequestMessage()
 	Set message = interaction.MessageRequest.GenerateMessageRequest()
 	
-    Set bo = ##class(APTT.Example.Operation).SampleCallCM(message, .response)
+    Set bo = ##class(APTT.Example.Operation).TestCallCM(message, .response)
     Set sc = interaction.MessageResponse.ValidateResponse(response)
     $$$ThrowOnError(sc)
+    zw sc
 
     Write "Validation success!",!
     Return message
