@@ -26,7 +26,7 @@ Parameter PRODUCTION As CONFIGVALUE = "None";
 /// We do not want to ignore any errors in production
 Parameter IGNOREPRODUCTIONERRORS = 0;
 
-Property Suites As list Of APTT.Tests.TestSuite;
+Property Suites As list Of APTT.Definition.TestSuite;
 
 ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests As %Boolean = 0, pExitOSProcess As %Boolean = 0) As %Status
 {
@@ -164,7 +164,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 	Return $$$OK
 }
 
-Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private ]
+Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Private ]
 {
 	/// TODO:
 	/// 	KEY POINT: USE ..LOGERRORS FOR NON-FATAL ERRORS OTHERWISE RETURN AN ERROR

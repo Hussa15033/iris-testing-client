@@ -10,7 +10,7 @@ Class APTT.Parser
 /// 
 /// Parses a file using the test definition JSON model
 /// 
-ClassMethod LoadFileAsTestSuite(pFilepath As %String) As APTT.Tests.TestSuite
+ClassMethod LoadFileAsTestSuite(pFilepath As %String) As APTT.Definition.TestSuite
 {
 	If ('##class(%File).Exists(pFilepath)) {
 		Throw ##class(%Exception.General).%New("File does not exist",2,,"The test definition file '" _ pFilepath _ "' does not exist")
@@ -30,7 +30,7 @@ ClassMethod LoadFileAsTestSuite(pFilepath As %String) As APTT.Tests.TestSuite
 
 	Do file.Close()
 
-	Set testSuite = ##class(APTT.Tests.TestSuite).%New()
+	Set testSuite = ##class(APTT.Definition.TestSuite).%New()
 	Set testSuite.SourceFile = pFilepath
 	Set tSC = testSuite.%JSONImport(data)
 	$$$ThrowOnError(tSC)
