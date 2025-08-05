@@ -23,21 +23,12 @@ Class APTT.ProductionTester Extends %UnitTest.TestProduction
 /// The production to test, this is determined at Runtime so a default value of "None" is specified
 Parameter PRODUCTION As CONFIGVALUE = "None";
 
-/// The directory holding our Test Definition files.
-Parameter TESTDEFINITIONDIRECTORY As CONFIGVALUE = "None";
-
 /// We do not want to ignore any errors in production
 Parameter IGNOREPRODUCTIONERRORS = 0;
 
 Property Suites As list Of APTT.Tests.TestSuite;
 
-Property TotalTests As %Integer [ InitialExpression = 0 ];
-
-Property SuccessfulTests As %Integer [ InitialExpression = 0 ];
-
-Property RanTests As %Integer [ InitialExpression = 0 ];
-
-ClassMethod Run(pFileDirectory, pProduction) As %Status
+ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests As %Boolean = 0, pExitOSProcess As %Boolean = 0) As %Status
 {
 	Set dir = ##class(%File).%New(pFileDirectory)
 	If ('##class(%File).DirectoryExists(pFileDirectory)) {
@@ -52,19 +43,38 @@ ClassMethod Run(pFileDirectory, pProduction) As %Status
 	Set tSC = $System.OBJ.UpdateConfigParam($CLASSNAME(), "PRODUCTION", pProduction)
 	$$$ThrowOnError(tSC)
 
-	/// Update the TESTDEFINITIONDIRECTORY at runtime
-	Set tSC = $System.OBJ.UpdateConfigParam($CLASSNAME(), "TESTDEFINITIONDIRECTORY", pFileDirectory)
-	$$$ThrowOnError(tSC)
+	/// Tool specific globals
+	Kill ^APTT
+	Set ^APTT.TestDefinitionDirectory = pFileDirectory
+	Set ^APTT.Runtime = $ZDT($H)
+	Set ^APTT.ExpectTests = pExpectTests
+	Set ^APTT.Success = 0
+	Set ^APTT.TotalTests = 0
+	Set ^APTT.TestsPassed = 0
+	Set ^APTT.TestsRan = 0
 	
 	// Run the super Run() method
+	/// The tSC returned by the Super.Run() method is unrelated to whether the tests passed or not, so we cannot use it
+	/// to reliably determine whether all tests passed or not, which is why we set the globals above.
 	Set tSC = ##super()
-	Quit tSC
+	
+	Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
+	If ($GET(^APTT.Success, "") = 1) {
+		Return $$$OK
+	} Else {
+		Return ..Error("Tests were not successful")
+	}
 }
 
 Method OnBeforeProductionStart() As %Status
 {
-	Do ..LogMessage("Loading test definition files from directory '" _ ..#TESTDEFINITIONDIRECTORY _ "'")
-	Set tSC = ..LoadTestDefinitionFiles(..#TESTDEFINITIONDIRECTORY)
+	Set testDefinitionDirectory = $GET(^APTT.TestDefinitionDirectory, "")
+	If (testDefinitionDirectory = "") {
+		Do $$$AssertFailure("No test definition directory was specified")
+	}
+
+	Do ..LogMessage("Loading test definition files from directory '" _ testDefinitionDirectory _ "'")
+	Set tSC = ..LoadTestDefinitionFiles(testDefinitionDirectory)
 	Return:'$$$ISOK(tSC) tSC
 
 
@@ -88,11 +98,18 @@ Method OnAfterProductionStart() As %Status
 
 Method OnAfterProductionStop() As %Status
 {
-Ra
-	Do ..LogMessage("Total of " _ ..SuccessfulTests _ "/" _ ..TotalTests _ " tests were successful out of " _ ..RanTests _ " tests ran")
+	Do ..LogMessage("Total of " _ ^APTT.TestsPassed _ "/" _ ^APTT.TestsPassed _ " tests were successful out of " _ ^APTT.TestsRan _ " tests ran")
 
-	Do $$$AssertEquals(..SuccessfulTests, ..TotalTests)
-	Do $$$AssertEquals(..RanTests, ..TotalTests)
+	Do $$$AssertEquals(^APTT.TestsPassed, ^APTT.TotalTests)
+	Do $$$AssertEquals(^APTT.TestsRan, ^APTT.TotalTests + 1)
+	
+	If ((^APTT.TestsPassed = ^APTT.TotalTests) && (^APTT.TestsRan = ^APTT.TotalTests)) {
+		/// Check all tests passed and all tests ran before setting the ^APTT.Success global, as this global is the
+		/// most important global which dictates whether the tests passed or not
+		Do ..LogMessage("All tests ran and were successful")
+		Set ^APTT.Success = 1
+	}
+
 
 	Quit $$$OK
 }
@@ -128,7 +145,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 			/// Count how many test cases there are
 			Set tKey = testSuite.TestCases.Next("")
 			While tKey '= "" {
-				Set ..TotalTests = ..TotalTests + testSuite.TestCases.GetAt(tKey).Interactions.Size
+				Do $I(^APTT.Totaltests, testSuite.TestCases.GetAt(tKey).Interactions.Size)
 				Set tKey = testSuite.TestCases.Next(tKey)
 			}
 		} Catch ex {
@@ -139,6 +156,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 	
 	If ..Suites.Size = 0 {
 		Do ..LogMessage("No test suites found")
+		Return:^APTT.ExpectTests=1 ..Error("Tests were expected, however none were loaded")
 	} Else {
 		Do ..LogMessage("Identified " _ ..Suites.Size _ " test suites to run")
 	}
@@ -162,11 +180,11 @@ Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private 
 		Set targetHostName = testCase.TargetHostName
 		Set targetHostClass = testCase.TargetHostClass
 
-		Do ..LogMessage("  Running tests for host " _ targetHostName)
+		Do ..LogMessage("  Starting tests for host '" _ targetHostName _ "'")
 		
 		/// Attempt to find the target host this test is for
 		Set prod = ##class(Ens.Config.Production).%OpenId(..#PRODUCTION,,.tSC)
-		$$$ThrowOnError(tSC)
+		Do $$$AssertStatusOK(tSC)
 
 		Set itemFound = ""
 		For i=1:1:prod.Items.Count() {
@@ -186,17 +204,24 @@ Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private 
 			Throw ##class(%Exception.General).%New("Item not enabled", "-15",,"Business host '" _ targetHostName _ "' with class '" _ targetHostClass _ "' has not been enabled within production")
 		}
 
+		Do $$$AssertNotEquals(itemFound, "")
+		Do $$$AssertTrue(itemFound.Enabled)
 		/// By this point, the Config item is valid, exists within the production and is enabled
 
 		/// Run the interactions within the TestCase
 		Set interactions = testCase.Interactions
 
 		For j=1:1:testCase.Interactions.Size {
-			Do ..LogMessage("    Running interaction " _ j)
-			Set ..RanTests = ..RanTests + 1
-
 			#dim interaction As APTT.Definition.Interaction
 			Set interaction = testCase.Interactions.GetAt(j)
+
+			If (interaction.Name '= "") {
+				Do ..LogMessage("    Running interaction named '" _ interaction.Name _ "'")
+			} Else {
+				Do ..LogMessage("     Running interaction with index " _ j)
+			}
+
+			Do $I(^APTT.TestsRan, 1)
 
 			/// Generate the Ens.Request message we will be sending into the
 			/// production
@@ -206,11 +231,13 @@ Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private 
 
 				/// Send the message into the production
 				Do ..LogMessage("      Sending request to " _ targetHostName)
-				Do ..SendRequest(targetHostName, requestMessage, .responseMessage, 1)
+				Set tSC = ..SendRequest(targetHostName, requestMessage, .responseMessage, 1)
+				Do $$$AssertStatusOK(tSC)
 
 				/// Now validate the response against what we expect
-				Set validation = interaction.MessageResponse.ValidateResponse(responseMessage)
-				Set:$$$ISOK(validation) ..SuccessfulTests = ..SuccessfulTests + 1
+				Set validationSC = interaction.MessageResponse.ValidateResponse(responseMessage)
+				Do:$$$ISOK(validationSC) $I(^APTT.TestsPassed, 1)
+				Do $$$AssertStatusOK(validationSC)
 				Do ..LogMessage("      Response message is valid")
 			} Catch ex {
 				Do ..LogMessage("      Error occurred while running tests:" _ ex.DisplayString())
