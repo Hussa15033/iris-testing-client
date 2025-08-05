@@ -21,7 +21,7 @@ Method %OnNew(pOptions As %DynamicObject) As %Status
 
 	While jsonIter.%GetNext(.key, .value, .type) {
 		If ($LISTFIND(validOptionsList, key) = 0) {
-			Throw ##class(%Exception.General).%New("Invalid valid operator for '" _ $CLASSNAME() _ "'","-438",,"'" _ key _ "' is not a valid option for this validator")
+			Throw ##class(%Exception.General).%New("Invalid option for validator '" _ $CLASSNAME() _ "'","-438",,"'" _ key _ "' is not a valid option for this validator. Valid options: " _ $LISTTOSTRING(validOptionsList, ", "))
 		}
 	}
 	

@@ -179,7 +179,7 @@ Method ValidateResponse(pResponse As Ens.Response) As %Status
 		If ('JSONPaths.IsDefined(vPath)) {
 			/// The path specified by the validator is non existent in the mapped paths of the 
 			/// JSON test definition
-			Throw ##class(%Exception.General).%New("Validation path '" _ vPath _ "' does not exist","-330",,"Path specified by validator is NOT a valid path. Please double check all validators lead to an existing path within the JSON response test definition")
+			Throw ##class(%Exception.General).%New("Validation path '" _ vPath _ "' does not exist","-330",,"Path specified by validator is NOT a valid path. Please ensure all validators lead to an existing path within the JSON response test definition")
 		}
 		Set vPath = ..Validators.Next(vPath)
 	}
