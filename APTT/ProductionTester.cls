@@ -73,7 +73,7 @@ Method OnBeforeProductionStart() As %Status
 		Do $$$AssertFailure("No test definition directory was specified")
 	}
 
-	Do ..LogMessage("Loading test definition files from directory '" _ testDefinitionDirectory _ "'")
+	Do ..LogMessage("-->Loading test definition files from directory '" _ testDefinitionDirectory _ "'")
 	Set tSC = ..LoadTestDefinitionFiles(testDefinitionDirectory)
 	Return:'$$$ISOK(tSC) tSC
 
