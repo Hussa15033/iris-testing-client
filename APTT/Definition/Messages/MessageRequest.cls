@@ -1,8 +1,16 @@
+/// 
+/// The message request class which parses request messages from the test definition file
+/// 
 Class APTT.Definition.Messages.MessageRequest Extends APTT.Definition.Messages.Message
 {
 
+/// Message classes from the test definition file MUST be a child of Ens.Request
 Parameter MESSAGECLASS = "Ens.Request";
 
+/// 
+/// <p>Parse JSON object into an instance of this MessageRequest class</p>
+/// <p><property>pJSON</property> - The JSON object to parse</p>
+/// <p><property>pParent</property> - The parent ObjectScript OBJECT</p>
 ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %RegisteredObject
 {
 	Set requestJSON = pJSON.request
@@ -14,13 +22,15 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 }
 
 /// 
-/// This method generates the Ens.Request using the <property>ClassName</property> specified
-/// and attempts to populate the <property>Properties</property> within the message
-/// class
+/// <p>This method generates an object of the message class specified in the test definition file, this value is
+/// stored in the <property>ClassName</property> property</p>
 /// 
-/// This method will throw an error if it fails to populate any properties of the message class
+/// <p>It attempts to populate the <property>..Properties</property> property using the
+/// <method>..PopulateObjectFromJSON</method> method</p>
 /// 
-/// Nested object properties will be instantiated and populated also
+/// <p>This method will throw an error if it fails to populate any properties of the message class</p>
+/// 
+/// <p>Nested object properties will also be instantiated and populated</p>
 /// 
 Method GenerateMessageRequest()
 {
@@ -31,7 +41,8 @@ Method GenerateMessageRequest()
 	Return messageObj
 }
 
-Method AssertEquals(pStr1, pStr2, pFailMessage) As %Status
+/// Helper method for assertion
+Method AssertEquals(pStr1, pStr2, pFailMessage) As %Status [ Private ]
 {
 	If (pStr1 '= pStr2) {
 		Throw ##class(%Exception.General).%New("Equal Assertion Failed","-39",,pStr1 _ " != " _ pStr2 _ ": " _ pFailMessage)
@@ -42,7 +53,7 @@ Method AssertEquals(pStr1, pStr2, pFailMessage) As %Status
 
 /// A helper method to populate the properties of an object, given the object, and the corresponding
 /// JSON object, will throw an error if any properties cannot be set
-Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %DynamicObject)
+Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %DynamicObject) [ Private ]
 {
 	If ('pJSON.%Extends("%DynamicObject")) {
 		Throw ##class(%Exception.General).%New("Cannot populate object","-303",,"Cannot populate ObjectScript object of type " _ $CLASSNAME(pObj) _ " as JSON is not a valid %DynamicObject")

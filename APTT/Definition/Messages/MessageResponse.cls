@@ -1,3 +1,10 @@
+/// 
+/// The message response class for holding validators and response message
+/// definitions from the test definition file
+/// 
+/// @author Auwais Hussain
+/// @version 05.08.2025
+/// 
 Class APTT.Definition.Messages.MessageResponse Extends APTT.Definition.Messages.Message
 {
 

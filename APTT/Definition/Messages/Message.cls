@@ -1,11 +1,19 @@
+/// 
+/// Abstract message class used to encapsulate request and response messages
+/// 
+/// @author Auwais Hussain
+/// @version 05.08.2025
+/// 
 Class APTT.Definition.Messages.Message Extends %SerialObject [ Abstract ]
 {
 
 /// The type of message this is, should be either Ens.Request or Ens.Response
 Parameter MESSAGECLASS [ Abstract ];
 
+/// The message class name
 Property ClassName As %String;
 
+/// Parsed JSON properties from the test definition file
 Property Properties As %DynamicObject;
 
 Method %JSONImportInternal() As %Status
@@ -25,8 +33,11 @@ ClassMethod GetPropertyDefinition(pClassname, pProperty, Output Collection As %S
 	Set Type = def.Type
 }
 
-/// For some reason the parent object is passed into p1
-/// Ensure the "request" field is the %JSONFIELDNAME of Interaction.MessageRequest
+/// <p>For some reason the parent object is passed into 'pJSON', so this method should be overridden
+/// to pass the correct JSON object from the parent</p>
+/// <p>Ensure the "request" field is the %JSONFIELDNAME of Interaction.MessageRequest</p>
+/// <p><property>pJSON</property> - The parent JSON object from the test definition file</p>
+/// <p><property>pParent</property> - The parent ObjectScript OBJECT</p>
 ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %RegisteredObject
 {
 	If ($PARAMETER(, "MESSAGECLASS") = "") {
@@ -39,7 +50,8 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 	Set message.ClassName = request.class
 	Set message.Properties = request.properties
 
-	// 
+	/// If the message class specified in the test does not extend the MESSAGECLASS parameter
+	/// throw an error
 	If ('$CLASSMETHOD(message.ClassName, "%Extends", ..#MESSAGECLASS)) {
 		Throw ##class(%Exception.General).%New("Message class invalid","-882",,"Message class defined in test definition '" _ message.ClassName _ "' is not a child of '" _ ..#MESSAGECLASS _ "'")
 	}
