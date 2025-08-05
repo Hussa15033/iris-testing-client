@@ -98,10 +98,10 @@ Method OnAfterProductionStart() As %Status
 
 Method OnAfterProductionStop() As %Status
 {
-	Do ..LogMessage("Total of " _ ^APTT.TestsPassed _ "/" _ ^APTT.TestsPassed _ " tests were successful out of " _ ^APTT.TestsRan _ " tests ran")
+	Do ..LogMessage("Total of " _ ^APTT.TestsPassed _ "/" _ ^APTT.TotalTests _ " tests were successful out of " _ ^APTT.TestsRan _ " tests ran")
 
 	Do $$$AssertEquals(^APTT.TestsPassed, ^APTT.TotalTests)
-	Do $$$AssertEquals(^APTT.TestsRan, ^APTT.TotalTests + 1)
+	Do $$$AssertEquals(^APTT.TestsRan, ^APTT.TotalTests)
 	
 	If ((^APTT.TestsPassed = ^APTT.TotalTests) && (^APTT.TestsRan = ^APTT.TotalTests)) {
 		/// Check all tests passed and all tests ran before setting the ^APTT.Success global, as this global is the
@@ -145,7 +145,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 			/// Count how many test cases there are
 			Set tKey = testSuite.TestCases.Next("")
 			While tKey '= "" {
-				Do $I(^APTT.Totaltests, testSuite.TestCases.GetAt(tKey).Interactions.Size)
+				Do $I(^APTT.TotalTests, testSuite.TestCases.GetAt(tKey).Interactions.Size)
 				Set tKey = testSuite.TestCases.Next(tKey)
 			}
 		} Catch ex {
@@ -180,7 +180,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private 
 		Set targetHostName = testCase.TargetHostName
 		Set targetHostClass = testCase.TargetHostClass
 
-		Do ..LogMessage("  Starting tests for host '" _ targetHostName _ "'")
+		Do ..LogMessage("-->Starting tests for host '" _ targetHostName _ "'")
 		
 		/// Attempt to find the target host this test is for
 		Set prod = ##class(Ens.Config.Production).%OpenId(..#PRODUCTION,,.tSC)
@@ -196,7 +196,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private 
 		}
 
 		If (itemFound = "") {
-			Throw ##class(%Exception.General).%New("Item not found", "-193",,"Business host '" _ targetHostName _ "' with class '" _ targetHostClass _ "' not found")
+			Throw ##class(%Exception.General).%New("Item not found", "-193",,"Business host named '" _ targetHostName _ "' with class '" _ targetHostClass _ "' not found")
 		}
 
 		#dim itemFound As Ens.Config.Item
@@ -216,9 +216,9 @@ Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private 
 			Set interaction = testCase.Interactions.GetAt(j)
 
 			If (interaction.Name '= "") {
-				Do ..LogMessage("    Running interaction named '" _ interaction.Name _ "'")
+				Do ..LogMessage("---->Running interaction named '" _ interaction.Name _ "'")
 			} Else {
-				Do ..LogMessage("     Running interaction with index " _ j)
+				Do ..LogMessage("------>Running interaction with index " _ j)
 			}
 
 			Do $I(^APTT.TestsRan, 1)
@@ -226,11 +226,11 @@ Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private 
 			/// Generate the Ens.Request message we will be sending into the
 			/// production
 			Try {
-				Do ..LogMessage("      Generating request message " _ interaction.MessageRequest.ClassName _ "...")
+				Do ..LogMessage("-------->Generating request message " _ interaction.MessageRequest.ClassName _ "...")
 				Set requestMessage = interaction.MessageRequest.GenerateMessageRequest()
 
 				/// Send the message into the production
-				Do ..LogMessage("      Sending request to " _ targetHostName)
+				Do ..LogMessage("-------->Sending request to " _ targetHostName)
 				Set tSC = ..SendRequest(targetHostName, requestMessage, .responseMessage, 1)
 				Do $$$AssertStatusOK(tSC)
 
@@ -238,9 +238,10 @@ Method RunOneTestSuite(pTestSuite As APTT.Tests.TestSuite) As %Status [ Private 
 				Set validationSC = interaction.MessageResponse.ValidateResponse(responseMessage)
 				Do:$$$ISOK(validationSC) $I(^APTT.TestsPassed, 1)
 				Do $$$AssertStatusOK(validationSC)
-				Do ..LogMessage("      Response message is valid")
+				Do ..LogMessage("-------->Response message is valid")
 			} Catch ex {
-				Do ..LogMessage("      Error occurred while running tests:" _ ex.DisplayString())
+				Do ..LogErrors(..Error(ex.DisplayString()), pTestSuite.SourceFile _ "->" _ testCase.TargetHostName _ "->" _ "Interaction index " _ j)
+				Do $$$AssertFailure("Test Failed")
 			}
 		}
 	}

@@ -1,6 +1,8 @@
 Class APTT.Definition.Interaction Extends (%SerialObject, %JSON.Adaptor)
 {
 
+Property Name As %String(%JSONFIELDNAME = "name");
+
 Property MessageRequest As APTT.Definition.Messages.MessageRequest(%JSONFIELDNAME = "request");
 
 Property MessageResponse As APTT.Definition.Messages.MessageResponse(%JSONFIELDNAME = "response");
@@ -13,6 +15,9 @@ Storage Default
 </Value>
 <Value name="2">
 <Value>MessageResponse</Value>
+</Value>
+<Value name="3">
+<Value>Name</Value>
 </Value>
 </Data>
 <State>InteractionState</State>
