@@ -55,15 +55,15 @@
                             "OtherAddresses[0].Streets[0]": {
                                 "validator": "TextValidator",
                                 "options": {
-                                    "contains": "ee3"
+                                    "contains": "eet3"
                                 }
                             }
                         },
                         "properties": {
-                            "Name": "OtherUser",
+                            "Name": "r",
                             "FavouriteColours": [
                                 "Blue",
-                                "Green"
+                                ["Green"]
                             ],
                             "MainAddress": {
                                 "HouseNumber": 55,
