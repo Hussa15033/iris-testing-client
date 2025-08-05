@@ -23,7 +23,7 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 		Set validators = responseJSON.validators
 
 		Set iter = validators.%GetIterator()
-
+	
 		/// Loop through all validators for this response
 		/// and attempt to create the validator with the
 		/// options
@@ -35,6 +35,7 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 			Try {
 				Set validator = $CLASSMETHOD(validatorClass, "%New", validatorOptions)
 			} Catch ex {
+				Write "Validator class " _ validatorClass _ " could not be instantiated " _ ex.DisplayString()
 				Throw ##class(%Exception.General).%New("Failed to initialise validator","-499",,"The validator class '" _ validatorClass _ "' could not be initialised: " _ ex.DisplayString())
 			}
 			Do message.Validators.SetAt(validator, fieldName)
@@ -61,7 +62,21 @@ Method ResolveDotPath(pPath As %String, pObj As Ens.Response)
 			/// If the value contains square brackets, it means this is square bracket notation for a list
 			Set extractField = $LISTFROMSTRING(fieldName, "[")
 			Set fieldName = $LISTGET(extractField, 1)
-			Set index = $EXTRACT($LISTGET(extractField, 2), 1, *-1)
+			Set indexes = $lb()
+
+			/// We loop from the 2nd position onwards to extract all the indexes
+			/// to deal with the case of multidimensional lists
+			Set pos = 2
+			While $LISTDATA(extractField, pos) {
+				Set index = $LISTGET(extractField, pos, "")
+				If index '= "" {
+					/// Each index will be in the format of 3], 4], etc..
+					/// So we need to extract the actual index by removing the "]" char at the end
+					Set indexes = $LISTUPDATE(indexes, pos - 1, 1:$EXTRACT(index, 1, *-1))
+				}
+
+				Do $I(pos)
+			}
 		}
 
 		/// Traverse the object, checking if it is an array
@@ -94,9 +109,22 @@ Method ResolveDotPath(pPath As %String, pObj As Ens.Response)
 				Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'","-415",,"Field '" _ fieldName _ "' is an array within " _ $CLASSNAME(pObj) _ " response message, could not resolve key " _ index _ " within array, possible options for key: " _ possibleOptions)
 			}
 		} ElseIf CollectionType = "list" {
-			If (index = "") {
+			If (indexes = "" || $LISTLENGTH(indexes) = 0) {
 				/// This property is a list, but no index was specified
 				Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'","-412",,"Field '" _ fieldName _ "' is a list within " _ $CLASSNAME(pObj) _ " response message, no index was specified by path")
+			}
+
+			Set iKey = 1
+			set listObj = propertyValue
+			While iKey < $LISTLENGTH(indexes) {
+				Set objClass = $CLASSNAME(curObj)
+				If (objClass = "") || '$CLASSMETHOD(objClass, "%Extends", "%Collection.AbstractList") {
+					Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'", "-413",,"Could not access indices for field '" _ fieldName _ "', this list has the incorrect number of dimensions for the given path. Dimensions resolved: " _ iKey _ ", Dimensions expected: " _ $LISTLENGTH(indexes) _ ". Please check the test definition file to ensure all lists have the correct number of sublists")
+				}
+
+				Set listObj = listObj.GetAt($LISTGET(indexes, iKey))
+
+				Do $I(iKey)
 			}
 			Set curObj = propertyValue.GetAt(index + 1)
 		} Else {
