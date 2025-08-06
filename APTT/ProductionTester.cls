@@ -34,6 +34,32 @@ Property AccountedErrors As %Integer [ InitialExpression = 0 ];
 
 Property CheckedBaseLogID As %Integer [ InitialExpression = -1 ];
 
+Method ColourText(pText As %String, pColour As %String = "black") As %String
+{
+	Set cCode = $CASE(
+		pColour,
+		"red":"31",
+		"green":"32",
+		"black":"30",
+		"blue":"34",
+		1:"30"
+	)
+
+	Return $c(27) _ "[" _ cCode _ "m" _ pText _ $c(27) _ "[m"
+}
+
+/// Logs a message in a specific colour
+/// supported colours:
+/// - red
+/// - green
+/// - black
+/// - blue
+/// 
+Method LogColourMessage(pText As %String, pColour As %String = "black")
+{
+	Do ..LogMessage(..ColourText(pText, pColour))
+}
+
 ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests As %Boolean = 0, pExitOSProcess As %Boolean = 0) As %Status
 {
 	Set dir = ##class(%File).%New(pFileDirectory)
@@ -64,7 +90,7 @@ ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests 
 	/// to reliably determine whether all tests passed or not, which is why we set the globals above.
 	Set tSC = ##super()
 	
-	Write "----- Summary -----",!
+	Write !,"----- Summary -----",!
 	Write "- Total tests: " _ ^APTT.TotalTests,!
 	Write "- Tests ran: " _ ^APTT.TestsRan,!
 	
@@ -112,7 +138,7 @@ Method OnAfterProductionStart() As %Status
 
 Method OnAfterProductionStop() As %Status
 {
-	Do ..LogMessage("Total of " _ ^APTT.TestsPassed _ "/" _ ^APTT.TotalTests _ " tests were successful out of " _ ^APTT.TestsRan _ " tests ran")
+	Do ..LogColourMessage("Total of " _ ^APTT.TestsPassed _ "/" _ ^APTT.TotalTests _ " tests were successful out of " _ ^APTT.TestsRan _ " tests ran", "green")
 
 	Do $$$AssertEquals(^APTT.TestsPassed, ^APTT.TotalTests)
 	Do $$$AssertEquals(^APTT.TestsRan, ^APTT.TotalTests)
@@ -120,7 +146,7 @@ Method OnAfterProductionStop() As %Status
 	If ((^APTT.TestsPassed = ^APTT.TotalTests) && (^APTT.TestsRan = ^APTT.TotalTests)) {
 		/// Check all tests passed and all tests ran before setting the ^APTT.Success global, as this global is the
 		/// most important global which dictates whether the tests passed or not
-		Do ..LogMessage("All tests ran and were successful")
+		Do ..LogColourMessage("All tests ran and were successful", "green")
 		Set ^APTT.Success = 1
 	}
 
@@ -151,7 +177,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 			Do ..LogMessage("---->Loading " _ filename _ "...")
 			Set testSuite = ##class(APTT.Parser).LoadFileAsTestSuite(path)
 
-			Do ..LogMessage("---->Loaded")
+			Do ..LogColourMessage("---->Loaded", "green")
 
 			/// Throw errors if any of the test definition files have a different target namespace or production
 			Throw:testSuite.TargetNamespace'=$NAMESPACE ##class(%Exception.General).%New("Incorrect namespace","-93",,"The namespace specified '" _ testSuite.TargetNamespace _ "' is different to the selected namespace '" _ $NAMESPACE _ "'. Ensure all test definition files have the same target namespace")
@@ -176,7 +202,8 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 		Do ..LogMessage("No test suites found")
 		Return:^APTT.ExpectTests=1 ..Error("Tests were expected, however none were loaded")
 	} Else {
-		Do ..LogMessage("Identified " _ ..Suites.Size _ " test suites to run")
+		Do ..LogColourMessage("-->" _ ..Suites.Size _ " test suites loaded", "green")
+		Do ..LogColourMessage("-->Identified " _ ^APTT.TotalTests _ " tests to run", "green")
 	}
 
 	Return $$$OK
@@ -234,9 +261,9 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 			Set interaction = testCase.Interactions.GetAt(j)
 
 			If (interaction.Name '= "") {
-				Do ..LogMessage("---->Running interaction named '" _ interaction.Name _ "'")
+				Do ..LogColourMessage("---->Running interaction named '" _ interaction.Name _ "'", "blue")
 			} Else {
-				Do ..LogMessage("------>Running interaction with index " _ j)
+				Do ..LogColourMessage("------>Running interaction with index " _ j, "blue")
 			}
 
 			Do $I(^APTT.TestsRan, 1)
@@ -262,12 +289,12 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 
 				Do:$$$ISOK(validationSC) $I(^APTT.TestsPassed, 1)
 				Do $$$AssertStatusOK(validationSC)
-				Do ..LogMessage("-------->Response message is valid")
+				Do ..LogColourMessage("-------->Response message is valid", "green")
 			} Catch ex {
 				Set interactionName = "Interaction index " _ j
 				Set:interaction.Name'="" interactionName = interaction.Name
 
-				Do ..LogErrors(..Error(ex.DisplayString()), "File '" _ ##class(%File).GetFilename(pTestSuite.SourceFile) _ "'" _ "->" _ testCase.TargetHostName _ "->" _ interactionName)
+				Do ..LogErrors(..Error(..ColourText(ex.DisplayString(), "red")), "File '" _ ##class(%File).GetFilename(pTestSuite.SourceFile) _ "'" _ "->" _ testCase.TargetHostName _ "->" _ interactionName)
 				Do $$$AssertFailure("Interaction Test Failed")
 			}
 		}
@@ -293,6 +320,8 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 
 	Do ..GetEventLog("error","",..CheckedBaseLogID, .Errs, .n)
 
+	Set tSC = $$$OK
+	
 	/// Loop through all errors
 	For i=1:1:n {
 		Set logID = Errs(i, "ID")
@@ -305,17 +334,21 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 		If (expectedErrList.Size > 0) && (expectedErrList.Size <= i) {
 			Set expectedErr = expectedErrList.GetAt(i)
 			If (expectedErr '[ errText) {
-				Return $System.Status.Error(5001,"Expected production error to contain text '" _ expectedErr _ "' but actual error is '" _ errText _ "'")
+				Do ..LogColourMessage("Expected production error to contain text '" _ expectedErr _ "' but actual error is '" _ errText _ "'", "red")
+				Set tSC = $System.Status.Error(5001, ..ColourText("One or more production errors could not be validated -- Please see above", "red"))
 			}
 		} Else {
 			Set ..AccountedErrors = ..AccountedErrors + 1
 		}
 	}
 
+	/// Increment the base log ID to not overlap errors from the previous interaction
+	Set ..CheckedBaseLogID = ..CheckedBaseLogID + 1
+
 	Quit:expectedErrCnt'=n $System.Status.Error(5001,"Expected " _ expectedErrCnt _ " errors but " _ n _ " errors occurred since last interaction")
 
-	Do ..LogMessage("Expected " _ expectedErrCnt _ " errors and detected " _ n _ " errors, test passed")
-	Quit $$$OK
+	Do ..LogColourMessage("Expected " _ expectedErrCnt _ " errors and detected " _ n _ " errors, test passed", "green")
+	Quit tSC
 }
 
 Method CheckErrors() As %Status
