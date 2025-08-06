@@ -214,7 +214,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 	/// TODO:
 	/// 	KEY POINT: USE ..LOGERRORS FOR NON-FATAL ERRORS OTHERWISE RETURN AN ERROR
 	///				   STATUS CODE IF THE ERROR IS FATAL
-	Do ..LogMessage("Running test definition file '" _ pTestSuite.SourceFile _ "'")
+	Do ..LogColourMessage("Running test definition file '" _ pTestSuite.SourceFile _ "'", "blue")
 	
 	/// Attempt to run all messages within this production
 	Set tc = pTestSuite
@@ -307,7 +307,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 /// that were expected from this interaction are accounted for
 Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %Status
 {
-	Do ..LogMessage("Running CheckInteractionErrors()")
+	Do ..LogColourMessage("Running CheckInteractionErrors()", "blue")
 	If (..CheckedBaseLogID = -1) {
 		/// If base log ID not initialized, set to production base default
 		Set ..CheckedBaseLogID = ..BaseLogId
@@ -331,9 +331,9 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 			Set ..CheckedBaseLogID = logID
 		}
 
-		If (expectedErrList.Size > 0) && (expectedErrList.Size <= i) {
+		If (expectedErrList.Size > 0) && (i <= expectedErrList.Size) {
 			Set expectedErr = expectedErrList.GetAt(i)
-			If (expectedErr '[ errText) {
+			If (errText '[ expectedErr) {
 				Do ..LogColourMessage("Expected production error to contain text '" _ expectedErr _ "' but actual error is '" _ errText _ "'", "red")
 				Set tSC = $System.Status.Error(5001, ..ColourText("One or more production errors could not be validated -- Please see above", "red"))
 			}
@@ -347,7 +347,7 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 
 	Quit:expectedErrCnt'=n $System.Status.Error(5001,"Expected " _ expectedErrCnt _ " errors but " _ n _ " errors occurred since last interaction")
 
-	Do ..LogColourMessage("Expected " _ expectedErrCnt _ " errors and detected " _ n _ " errors, test passed", "green")
+	Do:$$$ISOK(tSC) ..LogColourMessage("Expected " _ expectedErrCnt _ " errors and detected " _ n _ " errors, test passed", "green")
 	Quit tSC
 }
 
