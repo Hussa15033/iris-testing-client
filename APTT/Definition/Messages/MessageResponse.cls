@@ -12,10 +12,15 @@ Parameter MESSAGECLASS = "Ens.Response";
 
 Property Validators As array Of APTT.Definition.Validators.Base;
 
+Property ExpectedErrors As list Of %String;
+
+Property ExpectedErrorCount As %Integer [ InitialExpression = 0 ];
+
 /// For some reason the parent object is passed into p1
 /// Ensure the "response" field is the %JSONFIELDNAME of Interaction.MessageRequest
 ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %RegisteredObject
 {
+	#dim responseJSON As %DynamicObject
 	Set responseJSON = pJSON.response
 	If (responseJSON = "") {
 		Throw ##class(%Exception.General).%New("Invalid JSON","-11",,"The request property does not exist for interaction")
@@ -46,6 +51,29 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 				Throw ##class(%Exception.General).%New("Failed to initialise validator","-499",,"The validator class '" _ validatorClass _ "' could not be initialised: " _ ex.DisplayString())
 			}
 			Do message.Validators.SetAt(validator, fieldName)
+		}
+	}
+
+	If (responseJSON.%IsDefined("errors")) {
+		Set errors = responseJSON.errors
+		Set dataType = responseJSON.%GetTypeOf("errors")
+
+		If (dataType = "array") {
+			/// This is a list of known errors expected by this business host
+			Set iter = errors.%GetIterator()
+			While (iter.%GetNext(.key, .value, .type)) {
+				If (type '= "string") {
+					Throw ##class(%Exception.General).%New("Invalid data type","-420",,"'error' field in response must be an array of strings")
+				}
+
+				Do message.ExpectedErrors.Insert(value)
+			}
+
+			Set message.ExpectedErrorCount = message.ExpectedErrors.Size
+		} ElseIf (dataType = "number") {
+			Set message.ExpectedErrorCount = errors
+		} Else {
+			Throw ##class(%Exception.General).%New("Invalid data type", "-419",,"'error' field in response must be either an integer or array of strings")
 		}
 	}
 
@@ -238,7 +266,7 @@ Method ValidateResponse(pResponse As Ens.Response) As %Status
 		Set validator = ..Validators.GetAt(path)
 
 		/// Run the validator, will throw a validation error if one occurs
-		
+
 		Try {
 			Set tSC = validator.Validate(expectedValue, actualValue)
 			$$$ThrowOnError(tSC)
@@ -264,6 +292,12 @@ Storage Default
 </Value>
 <Value name="3">
 <Value>Validators</Value>
+</Value>
+<Value name="4">
+<Value>ExpectedErrors</Value>
+</Value>
+<Value name="5">
+<Value>ExpectedErrorCount</Value>
 </Value>
 </Data>
 <Type>%Storage.Serial</Type>

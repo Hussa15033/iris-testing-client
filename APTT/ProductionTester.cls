@@ -23,10 +23,16 @@ Class APTT.ProductionTester Extends %UnitTest.TestProduction
 /// The production to test, this is determined at Runtime so a default value of "None" is specified
 Parameter PRODUCTION As CONFIGVALUE = "None";
 
-/// We do not want to ignore any errors in production
-Parameter IGNOREPRODUCTIONERRORS = 0;
+/// We want to perform custom error handling for production errors
+Parameter IGNOREPRODUCTIONERRORS = 1;
 
 Property Suites As list Of APTT.Definition.TestSuite;
+
+Property ExpectedErrors As %Integer [ InitialExpression = 0 ];
+
+Property AccountedErrors As %Integer [ InitialExpression = 0 ];
+
+Property CheckedBaseLogID As %Integer [ InitialExpression = -1 ];
 
 ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests As %Boolean = 0, pExitOSProcess As %Boolean = 0) As %Status
 {
@@ -100,7 +106,7 @@ Method OnAfterProductionStart() As %Status
 		Set sKey = ..Suites.Next(sKey)
 	}
 
-	Return:ok=0 $System.Status.Error(6133, "One or more tests have failed")
+	Return:ok=0 $System.Status.Error(5001, "One or more tests have failed")
 	Quit $$$OK
 }
 
@@ -161,7 +167,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 				Set tKey = testSuite.TestCases.Next(tKey)
 			}
 		} Catch ex {
-			Set tSC = $System.Status.Error(5030, ex.DisplayString())
+			Set tSC = $System.Status.Error(5001, ex.DisplayString())
 			Return tSC
 		}
 	}
@@ -244,20 +250,81 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 				/// Send the message into the production
 				Do ..LogMessage("-------->Sending request to " _ targetHostName)
 				Set tSC = ..SendRequest(targetHostName, requestMessage, .responseMessage, 1)
-				Do $$$AssertStatusOK(tSC)
+				Do:'$$$ISOK(tSC) ..LogMessage("Errors occurred during interaction, validating errors...")
+
+				/// Perform error handling to ensure all errors in the production are accounted for
+				Set tSC = ..CheckInteractionErrors(interaction)
+				$$$ThrowOnError(tSC)
 
 				/// Now validate the response against what we expect
 				Set validationSC = interaction.MessageResponse.ValidateResponse(responseMessage)
+				$$$ThrowOnError(validationSC)
+
 				Do:$$$ISOK(validationSC) $I(^APTT.TestsPassed, 1)
 				Do $$$AssertStatusOK(validationSC)
 				Do ..LogMessage("-------->Response message is valid")
 			} Catch ex {
-				Do ..LogErrors(..Error(ex.DisplayString()), pTestSuite.SourceFile _ "->" _ testCase.TargetHostName _ "->" _ "Interaction index " _ j)
-				Do $$$AssertFailure("Test Failed")
+				Set interactionName = "Interaction index " _ j
+				Set:interaction.Name'="" interactionName = interaction.Name
+
+				Do ..LogErrors(..Error(ex.DisplayString()), "File '" _ ##class(%File).GetFilename(pTestSuite.SourceFile) _ "'" _ "->" _ testCase.TargetHostName _ "->" _ interactionName)
+				Do $$$AssertFailure("Interaction Test Failed")
 			}
 		}
 	}
 
+	Quit $$$OK
+}
+
+/// This method checks the errors since the last check to ensure the errors
+/// that were expected from this interaction are accounted for
+Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %Status
+{
+	Do ..LogMessage("Running CheckInteractionErrors()")
+	If (..CheckedBaseLogID = -1) {
+		/// If base log ID not initialized, set to production base default
+		Set ..CheckedBaseLogID = ..BaseLogId
+	}
+
+	Set expectedErrCnt = pInteraction.MessageResponse.ExpectedErrorCount
+	Set expectedErrList = pInteraction.MessageResponse.ExpectedErrors
+
+	Set ..ExpectedErrors = ..ExpectedErrors + expectedErrCnt
+
+	Do ..GetEventLog("error","",..CheckedBaseLogID, .Errs, .n)
+
+	/// Loop through all errors
+	For i=1:1:n {
+		Set logID = Errs(i, "ID")
+		Set errText = Errs(i, "Text")
+
+		If logID > ..CheckedBaseLogID {
+			Set ..CheckedBaseLogID = logID
+		}
+
+		If (expectedErrList.Size > 0) && (expectedErrList.Size <= i) {
+			Set expectedErr = expectedErrList.GetAt(i)
+			If (expectedErr '[ errText) {
+				Return $System.Status.Error(5001,"Expected production error to contain text '" _ expectedErr _ "' but actual error is '" _ errText _ "'")
+			}
+		} Else {
+			Set ..AccountedErrors = ..AccountedErrors + 1
+		}
+	}
+
+	Quit:expectedErrCnt'=n $System.Status.Error(5001,"Expected " _ expectedErrCnt _ " errors but " _ n _ " errors occurred since last interaction")
+
+	Do ..LogMessage("Expected " _ expectedErrCnt _ " errors and detected " _ n _ " errors, test passed")
+	Quit $$$OK
+}
+
+Method CheckErrors() As %Status
+{
+	// Automatically check errors
+	Do $$$AssertEquals(..AccountedErrors, ..ExpectedErrors)
+	Do ..GetEventLog("error","", ..BaseLogId,,.TotalErrors)
+
+	Quit:(..AccountedErrors'=..ExpectedErrors)||(..AccountedErrors'=TotalErrors) $System.Status.Error(5001, "Not all errors have been accounted for. Expected " _ ..ExpectedErrors _ " errors but actually accounted for " _ ..AccountedErrors _ " errors, there were " _ TotalErrors _ " that occurred in total.")
 	Quit $$$OK
 }
 
