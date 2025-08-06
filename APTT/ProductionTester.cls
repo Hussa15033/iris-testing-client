@@ -58,6 +58,14 @@ ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests 
 	/// to reliably determine whether all tests passed or not, which is why we set the globals above.
 	Set tSC = ##super()
 	
+	Write "----- Summary -----",!
+	Write "- Total tests: " _ ^APTT.TotalTests,!
+	Write "- Tests ran: " _ ^APTT.TestsRan,!
+	
+	Set percentPassed = 0
+	Set:^APTT.TestsRan>0 percentPassed = $NUMBER(((^APTT.TestsPassed / ^APTT.TestsRan) * 100), 0)
+	Write "- Tests passed: " _ ^APTT.TestsPassed _ " / " _ ^APTT.TestsRan _ "(" _ percentPassed _ "%)",!
+
 	Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
 	If ($GET(^APTT.Success, "") = 1) {
 		Return $$$OK
@@ -133,9 +141,11 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 	While rSet.%Next() {
 		Try {
 			Set path = ##class(%File).NormalizeFilename(rSet.%Get("Name"))
+			Set filename = ##class(%File).GetFilename(path)
+			Do ..LogMessage("---->Loading " _ filename _ "...")
 			Set testSuite = ##class(APTT.Parser).LoadFileAsTestSuite(path)
 
-			Do ..LogMessage("---->Loaded " _ ##class(%File).GetFilename(path) _ "..")
+			Do ..LogMessage("---->Loaded")
 
 			/// Throw errors if any of the test definition files have a different target namespace or production
 			Throw:testSuite.TargetNamespace'=$NAMESPACE ##class(%Exception.General).%New("Incorrect namespace","-93",,"The namespace specified '" _ testSuite.TargetNamespace _ "' is different to the selected namespace '" _ $NAMESPACE _ "'. Ensure all test definition files have the same target namespace")

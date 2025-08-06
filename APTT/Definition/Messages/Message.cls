@@ -52,7 +52,14 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 
 	/// If the message class specified in the test does not extend the MESSAGECLASS parameter
 	/// throw an error
-	If ('$CLASSMETHOD(message.ClassName, "%Extends", ..#MESSAGECLASS)) {
+	Set messageClassValid = 0
+	Try {
+		Set messageClassValid = $CLASSMETHOD(message.ClassName, "%Extends", ..#MESSAGECLASS)
+	} Catch ex {
+		Throw ##class(%Exception.General).%New("Message class invalid","-891",,"The message class '" _ message.ClassName _ "' defined in the test file could not be validated, ensure the class exists and has been compiled. Error: " _ ex.DisplayString())
+	}
+
+	If ('messageClassValid) {
 		Throw ##class(%Exception.General).%New("Message class invalid","-882",,"Message class defined in test definition '" _ message.ClassName _ "' is not a child of '" _ ..#MESSAGECLASS _ "'")
 	}
 
