@@ -1,7 +1,7 @@
 Class APTT.Definition.Validators.TextValidator Extends APTT.Definition.Validators.Base
 {
 
-Parameter VALIDOPTIONS = "equals,contains,beginsWith,endsWith,caseSensitive";
+Parameter VALIDOPTIONS = "equals,contains,beginsWith,endsWith,caseSensitive,notEquals";
 
 /// Valid options for this TextValidator:
 /// "options": {
@@ -36,6 +36,10 @@ Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(
 		Do ..ValidateText("endsWith", pActualValue, ..getOption("endsWith"), caseSensitive)
 	}
 	
+	If (..hasOption("notEquals")) {
+		Do ..ValidateText("notEquals", pActualValue, ..getOption("notEquals"), caseSensitive)
+	}
+
 	Return $$$OK
 }
 
@@ -55,6 +59,8 @@ Method ValidateText(pMode As %String, pText As %String, pAuxText As %String, pSe
 		Set valid = ($EXTRACT(pText, 0, $L(pAuxText)) = pAuxText)
 	} ElseIf (pMode = "endsWith") && ($L(pAuxText) <= $L(pText)) {
 		Set valid = ($EXTRACT(pText, *-($L(pAuxText) - 1), *) = pAuxText)
+	} ElseIf (pMode = "notEquals") {
+		Set valid = (pText '= pAuxText)
 	}
 
 	If valid = 0 {
