@@ -336,6 +336,8 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 			If (errText '[ expectedErr) {
 				Do ..LogColourMessage("Expected production error to contain text '" _ expectedErr _ "' but actual error is '" _ errText _ "'", "red")
 				Set tSC = $System.Status.Error(5001, ..ColourText("One or more production errors could not be validated -- Please see above", "red"))
+			} Else {
+				Do ..LogColourMessage("Error " _ i _ " is an expected error and contains the specified text", "green")
 			}
 		} Else {
 			Set ..AccountedErrors = ..AccountedErrors + 1
