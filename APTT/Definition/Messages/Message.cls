@@ -54,7 +54,12 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 	/// throw an error
 	Set messageClassValid = 0
 	Try {
-		Set messageClassValid = $CLASSMETHOD(message.ClassName, "%Extends", ..#MESSAGECLASS)
+		/// "" is allowed for classname to specify a null message
+		If message.ClassName = "" {
+			Set messageClassValid = 1
+		} Else {
+			Set messageClassValid = $CLASSMETHOD(message.ClassName, "%Extends", ..#MESSAGECLASS)
+		}
 	} Catch ex {
 		Throw ##class(%Exception.General).%New("Message class invalid","-891",,"The message class '" _ message.ClassName _ "' defined in the test file could not be validated, ensure the class exists and has been compiled. Error: " _ ex.DisplayString())
 	}

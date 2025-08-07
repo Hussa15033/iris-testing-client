@@ -84,6 +84,8 @@ ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests 
 	Set ^APTT.TotalTests = 0
 	Set ^APTT.TestsPassed = 0
 	Set ^APTT.TestsRan = 0
+	Set ^APTT.ExpectedErrors = 0
+	Set ^APTT.AccountedErrors = 0
 	
 	// Run the super Run() method
 	/// The tSC returned by the Super.Run() method is unrelated to whether the tests passed or not, so we cannot use it
@@ -97,6 +99,7 @@ ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests 
 	Set percentPassed = 0
 	Set:^APTT.TestsRan>0 percentPassed = $NUMBER(((^APTT.TestsPassed / ^APTT.TotalTests) * 100), 0)
 	Write "- Tests passed: " _ ^APTT.TestsPassed _ " / " _ ^APTT.TotalTests _ "(" _ percentPassed _ "%)",!
+	Write "- Errors Accounted For: " _ ^APTT.AccountedErrors _ " / " _ ^APTT.ExpectedErrors,!
 
 	Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
 	If ($GET(^APTT.Success, "") = 1) {
@@ -153,6 +156,8 @@ Method OnAfterProductionStop() As %Status
 		/// most important global which dictates whether the tests passed or not
 		Do ..LogColourMessage("All tests ran and were successful", "green")
 		Set ^APTT.Success = 1
+	} Else {
+		Set ^APTT.Success = 0
 	}
 
 
@@ -230,7 +235,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 		Set targetHostName = testCase.TargetHostName
 		Set targetHostClass = testCase.TargetHostClass
 
-		Do ..LogMessage("-->Starting tests for host '" _ targetHostName _ "'")
+		Do ..LogColourMessage("-->Starting tests for host '" _ targetHostName _ "'", "blue")
 		
 		/// Attempt to find the target host this test is for
 		Set prod = ##class(Ens.Config.Production).%OpenId(..#PRODUCTION,,.tSC)
@@ -321,7 +326,7 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 	Set expectedErrCnt = pInteraction.MessageResponse.ExpectedErrorCount
 	Set expectedErrList = pInteraction.MessageResponse.ExpectedErrors
 
-	Set ..ExpectedErrors = ..ExpectedErrors + expectedErrCnt
+	Do $I(^APTT.ExpectedErrors, expectedErrCnt)
 
 	Do ..GetEventLog("error","",..CheckedBaseLogID, .Errs, .n)
 
@@ -342,11 +347,11 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 				Do ..LogColourMessage("Expected production error to contain text '" _ expectedErr _ "' but actual error is '" _ errText _ "'", "red")
 				Set tSC = $System.Status.Error(5001, ..ColourText("One or more production errors could not be validated -- Please see above", "red"))
 			} Else {
-				Set ..AccountedErrors = ..AccountedErrors
+				Do $I(^APTT.AccountedErrors, 1)
 				Do ..LogColourMessage("Error " _ i _ " is an expected error and contains the specified text", "green")
 			}
 		} Else {
-			Set ..AccountedErrors = ..AccountedErrors + 1
+			Do $I(^APTT.AccountedErrors, 1)
 		}
 	}
 
@@ -362,11 +367,16 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 Method CheckErrors() As %Status
 {
 	// Automatically check errors
-	Do:..AccountedErrors'=..ExpectedErrors ..LogColourMessage("Expected " _ ..ExpectedErrors _ " from the production however only " _ ..AccountedErrors _ " have been accounted for")
-	Do $$$AssertEquals(..AccountedErrors, ..ExpectedErrors)
+	Do $$$AssertEquals(^APTT.AccountedErrors, ^APTT.ExpectedErrors)
 	Do ..GetEventLog("error","", ..BaseLogId,,.TotalErrors)
 
-	Quit:(..AccountedErrors'=..ExpectedErrors)||(..AccountedErrors'=TotalErrors) $System.Status.Error(5001, "Not all errors have been accounted for. Expected " _ ..ExpectedErrors _ " errors but actually accounted for " _ ..AccountedErrors _ " errors, there were " _ TotalErrors _ " that occurred in total.")
+	If (^APTT.AccountedErrors'=^APTT.ExpectedErrors)||(^APTT.AccountedErrors'=TotalErrors) {
+		/// There were unaccounted errors within the production
+		Set msg = "Not all errors have been accounted for. Expected " _ ^APTT.ExpectedErrors _ " errors but actually accounted for " _ ^APTT.AccountedErrors _ " errors, there were " _ TotalErrors _ " errors that occurred in total."
+		Do ..LogErrors(..Error(..ColourText(msg, "red")))
+		Set ^APTT.Success = 0
+		Quit $System.Status.Error(5001, msg)
+	}
 	Quit $$$OK
 }
 
