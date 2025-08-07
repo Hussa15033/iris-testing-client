@@ -224,6 +224,9 @@ Method BuildAllPaths(pJSON, Output paths As %ArrayOfDataTypes, curPath = "")
 /// 
 Method ValidateResponse(pResponse As Ens.Response) As %Status
 {
+	If ($CLASSNAME(pResponse) '= ..ClassName) {
+		Throw ##class(%Exception.General).%New("Invalid class","-553",,"Expected response of type '" _ ..ClassName _ "' but actual response was of type '" _ $CLASSNAME(pResponse) _ "'")
+	}
 	Set JSON = ..Properties
 
 	/// We loop through the JSON defined in the testing definition
@@ -233,6 +236,7 @@ Method ValidateResponse(pResponse As Ens.Response) As %Status
 	Set jsonIter = JSON.%GetIterator()
 	Set JSONPaths = ##class(%ArrayOfDataTypes).%New()
 
+	/// Build all the paths in dot notation form for ..Properties
 	Do ..BuildAllPaths(..Properties, .JSONPaths)
 
 	/// Loop through all validators to ensure the fields exist, if they don't

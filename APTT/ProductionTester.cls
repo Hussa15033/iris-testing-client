@@ -179,7 +179,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 		Try {
 			Set path = ##class(%File).NormalizeFilename(rSet.%Get("Name"))
 			Set filename = ##class(%File).GetFilename(path)
-			Do ..LogMessage("---->Loading " _ filename _ "...")
+			Do ..LogColourMessage("---->Loading " _ filename _ "...", "blue")
 			Set testSuite = ##class(APTT.Parser).LoadFileAsTestSuite(path)
 
 			Do ..LogColourMessage("---->Loaded", "green")
@@ -207,8 +207,8 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 		Do ..LogMessage("No test suites found")
 		Return:^APTT.ExpectTests=1 ..Error("Tests were expected, however none were loaded")
 	} Else {
-		Do ..LogColourMessage("-->" _ ..Suites.Size _ " test suites loaded", "green")
-		Do ..LogColourMessage("-->Identified " _ ^APTT.TotalTests _ " tests to run", "green")
+		Do ..LogColourMessage("-->" _ ..Suites.Size _ " test suites loaded", "blue")
+		Do ..LogColourMessage("-->Identified " _ ^APTT.TotalTests _ " tests to run", "blue")
 	}
 
 	Return $$$OK
@@ -287,7 +287,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 				/// Perform error handling to ensure all errors in the production are accounted for
 				Set tSC = ..CheckInteractionErrors(interaction)
 				$$$ThrowOnError(tSC)
-
+				
 				/// Now validate the response against what we expect
 				Set validationSC = interaction.MessageResponse.ValidateResponse(responseMessage)
 				$$$ThrowOnError(validationSC)
@@ -342,6 +342,7 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 				Do ..LogColourMessage("Expected production error to contain text '" _ expectedErr _ "' but actual error is '" _ errText _ "'", "red")
 				Set tSC = $System.Status.Error(5001, ..ColourText("One or more production errors could not be validated -- Please see above", "red"))
 			} Else {
+				Set ..AccountedErrors = ..AccountedErrors
 				Do ..LogColourMessage("Error " _ i _ " is an expected error and contains the specified text", "green")
 			}
 		} Else {
@@ -361,6 +362,7 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 Method CheckErrors() As %Status
 {
 	// Automatically check errors
+	Do:..AccountedErrors'=..ExpectedErrors ..LogColourMessage("Expected " _ ..ExpectedErrors _ " from the production however only " _ ..AccountedErrors _ " have been accounted for")
 	Do $$$AssertEquals(..AccountedErrors, ..ExpectedErrors)
 	Do ..GetEventLog("error","", ..BaseLogId,,.TotalErrors)
 
