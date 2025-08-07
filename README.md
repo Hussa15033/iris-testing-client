@@ -17,11 +17,11 @@ To start with you can
 ## To do
 * [Done] Rename "ContainsValidator" to "TextValidator" and update the code as needed, use the examples in the Validators section below
 * Ensure namespace and production classes are checked properly
-* Restructure files and use the ATT.* package name
+* [Done] Restructure files and use the ATT.* package name
 * Finish any "TODOs" within the text documentation
 * Document all classes properly
 * Clean up dead code
-* Move tests to an "example" folder
+* [Done] Move tests to an "example" folder
 * Create a "build" folder with the XML export of the first release
 * In the getting started steps, show how to import the tool and use it
 ## Examples

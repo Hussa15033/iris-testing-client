@@ -95,8 +95,8 @@ ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests 
 	Write "- Tests ran: " _ ^APTT.TestsRan,!
 	
 	Set percentPassed = 0
-	Set:^APTT.TestsRan>0 percentPassed = $NUMBER(((^APTT.TestsPassed / ^APTT.TestsRan) * 100), 0)
-	Write "- Tests passed: " _ ^APTT.TestsPassed _ " / " _ ^APTT.TestsRan _ "(" _ percentPassed _ "%)",!
+	Set:^APTT.TestsRan>0 percentPassed = $NUMBER(((^APTT.TestsPassed / ^APTT.TotalTests) * 100), 0)
+	Write "- Tests passed: " _ ^APTT.TestsPassed _ " / " _ ^APTT.TotalTests _ "(" _ percentPassed _ "%)",!
 
 	Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
 	If ($GET(^APTT.Success, "") = 1) {
@@ -126,19 +126,24 @@ Method OnAfterProductionStart() As %Status
 	Set sKey = ..Suites.Next("")
 	Set ok = 1
 	While sKey '= "" {
-		Set testSuite = ..Suites.GetAt(sKey)
-		Set st = ..RunOneTestSuite(testSuite)
-		Set:'$$$ISOK(st) ok = 0
+		Try {
+			Set testSuite = ..Suites.GetAt(sKey)
+			Set st = ..RunOneTestSuite(testSuite)
+			Set:'$$$ISOK(st) ok = 0
+		} Catch ex {
+			Set ok = 0
+			Do ..LogColourMessage("-->" _ ex.DisplayString(), "red")
+		}
 		Set sKey = ..Suites.Next(sKey)
 	}
 
-	Return:ok=0 $System.Status.Error(5001, "One or more tests have failed")
+	Return:ok=0 $System.Status.Error(5001, ..ColourText("One or more tests have failed", "red"))
 	Quit $$$OK
 }
 
 Method OnAfterProductionStop() As %Status
 {
-	Do ..LogColourMessage("Total of " _ ^APTT.TestsPassed _ "/" _ ^APTT.TotalTests _ " tests were successful out of " _ ^APTT.TestsRan _ " tests ran", "green")
+	Do ..LogColourMessage("Total of " _ ^APTT.TestsPassed _ "/" _ ^APTT.TotalTests _ " tests were successful out of " _ ^APTT.TestsRan _ " tests ran", "blue")
 
 	Do $$$AssertEquals(^APTT.TestsPassed, ^APTT.TotalTests)
 	Do $$$AssertEquals(^APTT.TestsRan, ^APTT.TotalTests)
