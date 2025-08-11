@@ -21,6 +21,7 @@ To start with you can
 * Finish any "TODOs" within the text documentation
 * Document all classes properly
 * Clean up dead code
+* Ensure all IF conditions are properly paranthesised
 * [Done] Move tests to an "example" folder
 * Create a "build" folder with the XML export of the first release
 * In the getting started steps, show how to import the tool and use it

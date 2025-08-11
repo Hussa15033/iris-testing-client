@@ -92,6 +92,7 @@ Method ResolveDotPath(pPath As %String, pObj As Ens.Response)
 		/// Default values
 		Set fieldName = $LISTGET(splitPaths, i, "")
 		Set index = ""
+		Set indexes = ""
 
 		If (fieldName [ "[") {
 			/// If the value contains square brackets, it means this is square bracket notation for a list
@@ -141,14 +142,14 @@ Method ResolveDotPath(pPath As %String, pObj As Ens.Response)
 					Set possibleOptions = possibleOptions _ arrKey _ ","
 					Set arrKey = propertyValue.Next(arrKey)
 				}
-				Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'","-415",,"Field '" _ fieldName _ "' is an array within " _ $CLASSNAME(pObj) _ " response message, could not resolve key " _ index _ " within array, possible options for key: " _ possibleOptions)
+				Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'","-415",,"Field '" _ fieldName _ "' is an array within " _ $CLASSNAME(pObj) _ " response message, could not resolve key " _ key _ " within array, possible options for key: " _ possibleOptions)
 			}
 		} ElseIf CollectionType = "list" {
-			If (indexes = "" || $LISTLENGTH(indexes) = 0) {
+			If ((indexes = "") || ($LISTLENGTH(indexes) = 0)) {
 				/// This property is a list, but no index was specified
-				Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'","-412",,"Field '" _ fieldName _ "' is a list within " _ $CLASSNAME(pObj) _ " response message, no index was specified by path")
+				Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'","-412",,"Field '" _ fieldName _ "' is a list within " _ $CLASSNAME(pObj) _ " response message, no index was specified by path -- ensure this field contains a JSON array within the JSON test definition file")
 			}
-
+			
 			Set iKey = 1
 			set listObj = propertyValue
 			While iKey < $LISTLENGTH(indexes) {
