@@ -35,7 +35,11 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 Method GenerateMessageRequest()
 {
 	#dim messageObj As Ens.Request
-	Set messageObj = $CLASSMETHOD(..ClassName, "%New")
+	Try {
+		Set messageObj = $CLASSMETHOD(..ClassName, "%New")
+	} Catch ex {
+		Throw ##class(%Exception.General).%New("Failed to instantiate message","-17",,"The request message class specified in the test definition file '" _ ..ClassName _ "' could not be instantiated. Ensure this is a valid message class (error = " _ ex.DisplayString() _ ")")
+	}
 	Do ..PopulateObjectFromJSON(.messageObj, ..Properties)
 
 	Return messageObj
