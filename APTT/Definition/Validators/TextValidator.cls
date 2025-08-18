@@ -1,7 +1,7 @@
 Class APTT.Definition.Validators.TextValidator Extends APTT.Definition.Validators.Base
 {
 
-Parameter VALIDOPTIONS = "equals,contains,beginsWith,endsWith,caseSensitive,notEquals";
+Parameter VALIDOPTIONS = "equals,contains,beginsWith,endsWith,caseSensitive,notEquals,base64";
 
 /// Valid options for this TextValidator:
 /// "options": {
@@ -10,6 +10,7 @@ Parameter VALIDOPTIONS = "equals,contains,beginsWith,endsWith,caseSensitive,notE
 /// 	"beginsWith": ??,
 /// 	"endsWith": ??,
 /// 	"caseSensitive": "true", "false",
+/// 	"base64": ?? # A base64 value this field should encode to
 /// }
 /// 
 /// Can specify any combination of the above and they will all be checked
@@ -40,6 +41,10 @@ Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(
 		Do ..ValidateText("notEquals", pActualValue, ..getOption("notEquals"), caseSensitive)
 	}
 
+	If (..hasOption("base64")) {
+		Do ..ValidateText("base64", pActualValue, ..getOption("base64"), 1)
+	}
+
 	Return $$$OK
 }
 
@@ -61,6 +66,8 @@ Method ValidateText(pMode As %String, pText As %String, pAuxText As %String, pSe
 		Set valid = ($EXTRACT(pText, *-($L(pAuxText) - 1), *) = pAuxText)
 	} ElseIf (pMode = "notEquals") {
 		Set valid = (pText '= pAuxText)
+	} ElseIf (pMode = "base64") {
+		Set valid = ($System.Encryption.Base64Encode(pText) = pAuxText)
 	}
 
 	If valid = 0 {
