@@ -44,16 +44,13 @@ ClassMethod GetLastMessageHeaderID(pFrom As %String, pTo As %String) As %Integer
 ClassMethod ClassType(pObj As %RegisteredObject)
 {
 	Set pClassName = $CLASSNAME(pObj)
+		
 	If ((pClassName = pObj) || $CLASSMETHOD(pClassName, "%Extends", "%DataType")) {
 		Return "primitive"
-	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%Collection.ListOfDataTypes")) {
-		Return "listofdt"
-	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%Collection.ListOfObjects")) {
-		Return "listofobj"
-	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%Collection.ArrayOfDataTypes")) {
-		Return "arrayofdt"
-	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%Collection.ArrayOfObjects")) {
-		Return "arrayofobj"
+	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%Collection.AbstractList")) {
+		Return "list"
+	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%Collection.AbstractArray")) {
+		Return "array"
 	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%DynamicObject") || $CLASSMETHOD(pClassName, "%Extends", "%DynamicArray")) {
 		Return "json"
 	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%RegisteredObject")) {
@@ -94,14 +91,8 @@ ClassMethod PopulateJSONFromObject(pObject As %RegisteredObject)
 		Return pObject
 	}
 
-	Write $ISOBJECT(pObject)
-
-	Set dyn = ##class(%Library.DynamicObject).%New()
-
 	/// Loop through all properties of this object
-	Write !,!,pObject,!,!
 	Set className = $CLASSNAME(pObject)
-	Write className
 	Set objType = ..ClassType(pObject)
 
 	If (objType = "json") {
@@ -109,6 +100,9 @@ ClassMethod PopulateJSONFromObject(pObject As %RegisteredObject)
 	} ElseIf (objType = "primitive") {
 		Return pObject
 	} ElseIf (objType = "object") {
+
+		Set dyn = ##class(%Library.DynamicObject).%New()
+
 		/// This is an IRIS object, populate its properties
 
 		Set sql = ##class(%SQL.Statement).%ExecDirect(,"SELECT * FROM %Dictionary.CompiledProperty WHERE parent=? AND $EXTRACT(name, 1) != '%' AND private='0'", className)
@@ -121,9 +115,32 @@ ClassMethod PopulateJSONFromObject(pObject As %RegisteredObject)
 
 			Do dyn.%Set(propName, ..PopulateJSONFromObject(val))
 		}
-	}
 
-	Return dyn
+		Return dyn
+		
+	} ElseIf (objType = "list") {
+		Set jsonlist = ##class(%DynamicArray).%New()
+
+		For i=1:1:pObject.Count() {
+			Do jsonlist.add(..PopulateJSONFromObject(pObject.GetAt(i)))
+		}
+
+		Return jsonlist
+	} ElseIf (objType = "array") {
+		/// Converting an objectscript array (key/value pair) into
+		/// a JSON object
+		Set jsonobj = ##class(%DynamicObject).%New()
+
+		Set sKey = pObject.Next("")
+		While sKey '= "" {
+			Set val = ..PopulateJSONFromObject(pObject.GetAt(sKey))
+			Do jsonobj.put(sKey, val)
+
+			Set sKey = pObject.Next(sKey)
+		}
+
+		Return jsonobj
+	}
 }
 
 ClassMethod Record(pProductionClass As %String, pTarget As %String)
