@@ -57,6 +57,7 @@ Method AssertEquals(pStr1, pStr2, pFailMessage) As %Status [ Private ]
 
 /// A helper method to populate the properties of an object, given the object, and the corresponding
 /// JSON object, will throw an error if any properties cannot be set
+/// Todo: Move this method to a helper class, along with the reverse method of turning an object to JSON
 Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %DynamicObject) [ Private ]
 {
 	If ('pJSON.%Extends("%DynamicObject")) {
