@@ -148,6 +148,16 @@ ClassMethod Record(pProductionClass As %String, pTarget As %String)
 		Set pProductionClass = "HS.Local.HSUK.DefaultProduction"
 		Set pTarget = "TestPDS"
 
+		Set testDefinition = {}
+		Set testDefinition.production = pProductionClass
+		Set testDefinition.namespace = $NAMESPACE
+		Set testDefinition.tests = []
+		Set testSuite = {}
+		Set testSuite.name = pTarget
+		Set testSuite.class = "Testing"
+		Set interactions = []
+
+
 		Set tdf = "C:\Users\ahussain\Desktop\NHS Interfaces\PDSFHIRAPI\local\src\pds-fhir-api\Tests\ExampleFile.json"
 
 		Write "Recording tests.."
@@ -186,8 +196,29 @@ ClassMethod Record(pProductionClass As %String, pTarget As %String)
 		Set msgBodyClass = msgRequestHeader.MessageBodyClassName
 		Set msgBodyID = msgRequestHeader.MessageBodyId
 
-		Set msgResponseID = ..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process")
-		Write !,"r",msgResponseID
+		Set obj = $CLASSMETHOD(msgBodyClass, "%OpenId", msgBodyID)
+
+		Set interaction = {}
+		Set interaction.name = "Interaction"
+		Set interaction.request = {}
+		Set interaction.request.class = msgBodyClass
+		Set interaction.request.properties = ..PopulateJSONFromObject(obj)
+		
+		Set msgRequestHeader = ##class(Ens.MessageHeader).%OpenId(..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process"))
+		Set msgBodyClass = msgRequestHeader.MessageBodyClassName
+		Set msgBodyID = msgRequestHeader.MessageBodyId
+
+		Set obj = $CLASSMETHOD(msgBodyClass, "%OpenId", msgBodyID)
+
+		Set interaction.response = {}
+		Set interaction.response.class = msgBodyClass
+		Set interaction.response.properties = ..PopulateJSONFromObject(obj)
+
+		Do interactions.add(interaction)
+		Set testSuite.interactions = interactions
+		Do testDefinition.tests.add(testSuite)
+
+		W testDefinition.%ToJSON()
 }
 
 }
