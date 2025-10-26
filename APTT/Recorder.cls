@@ -143,51 +143,72 @@ ClassMethod PopulateJSONFromObject(pObject As %RegisteredObject)
 	}
 }
 
-ClassMethod Record(pProductionClass As %String, pTarget As %String)
+/// 
+/// pAcceptedAnswers is a comma-delimited list of potential answers
+ClassMethod MakeBooleanPrompt(pPrompt As %String, pAcceptedAnswers As %String)
 {
-		Set pProductionClass = "HS.Local.HSUK.DefaultProduction"
-		Set pTarget = "TestPDS"
+	Set acceptedAns = $LISTFROMSTRING(pAcceptedAnswers, ",")
+	Set action = ""
+	
+	While (action = "" && '$LISTFIND(acceptedAns, action)) {
+		Write !,pPrompt
+		Read action
+	}
 
+	Return action
+}
+
+ClassMethod Record(pProductionClass As %String, pTarget As %String, pTargetClass As %String)
+{
 		Set testDefinition = {}
 		Set testDefinition.production = pProductionClass
 		Set testDefinition.namespace = $NAMESPACE
 		Set testDefinition.tests = []
 		Set testSuite = {}
 		Set testSuite.name = pTarget
-		Set testSuite.class = "Testing"
+		Set testSuite.class = pTargetClass
 		Set interactions = []
 
+		While (1) {
+			Set action = ..MakeBooleanPrompt("Record a new test [R] or exit [E]: ", "A,E")
 
-		Set tdf = "C:\Users\ahussain\Desktop\NHS Interfaces\PDSFHIRAPI\local\src\pds-fhir-api\Tests\ExampleFile.json"
+			If (action = "E") {
+				Write "Exiting..."
+				Write !,!
+				Set testSuite.interactions = interactions
+				Do testDefinition.tests.add(testSuite)
+				Write testDefinition.%ToJSON()
+				Return
+			}
 
-		Write "Recording tests.."
+			Set interaction = ..RecordOneTest(pTarget)
 
-		Set action = ""
-		While (action '= "R") && (action '= "E") {
-			Read !, "Record a new test [R] or exit [E]: ", action
+			If (interaction '= "") {
+				Do interactions.add(interaction)
+			}
 		}
+}
 
-
-		If action = "E" {
-			Write "Exiting..."
-			Return
-		}
-
+ClassMethod RecordOneTest(pTarget As %String)
+{
+	
 
 		Set lastID = ..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process")
-		Set lastID = 8402
 		Write !,"Last message ID found: " _ lastID
 
-		Set accept = ""
-		While accept '= "A" {
-			Read !, "Accept test? [A]: ", accept
-		}
 
+		Set accept = ..MakeBooleanPrompt("Accept test [A] or Reject [R]: ", "A,R")
+
+		If (accept = "R") {
+			Write "**Test has been rejected"
+			Return ""
+		}
+		
 		Set newLastID = ..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process")
 
 		If newLastID = lastID {
 			Write !,"No new messages detected..."
-			Return
+			Return ""
 		}
 
 		/// A new message was detected, attempt to parse the input and output of this message
@@ -214,11 +235,7 @@ ClassMethod Record(pProductionClass As %String, pTarget As %String)
 		Set interaction.response.class = msgBodyClass
 		Set interaction.response.properties = ..PopulateJSONFromObject(obj)
 
-		Do interactions.add(interaction)
-		Set testSuite.interactions = interactions
-		Do testDefinition.tests.add(testSuite)
-
-		W testDefinition.%ToJSON()
+		Return interaction
 }
 
 }
