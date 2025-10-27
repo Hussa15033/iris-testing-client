@@ -158,13 +158,21 @@ ClassMethod MakeBooleanPrompt(pPrompt As %String, pAcceptedAnswers As %String)
 	Return action
 }
 
-ClassMethod Record()
+ClassMethod Record(pProductionClass As %String, pTargetName As %String)
 {
-		Read !,"Enter the production class: ",pProductionClass
+		If (pProductionClass = "") {
+			Read !,"Enter the production class: ",pProductionClass
+		}
 
-		Set production = ##class(Ens.Config.Production).%OpenId(pProductionClass)
+		Set production = ##class(Ens.Config.Production).%OpenId(pProductionClass,,.tSC)
 
-		Read !,"Enter the target item name: ",pTargetName
+		If ('$$$ISOK(tSC)) {
+			Throw ##class(%Exception.General).%New("No production found", "-9910",,"No production named '"_pProductionClass_"' was found")
+		}
+
+		If (pTargetName = "") {
+			Read !,"Enter the target item name: ",pTargetName
+		}
 
 		Set pTarget = ""
 		For i=1:1:production.Items.Count() {
@@ -220,16 +228,48 @@ ClassMethod Record()
 
 ClassMethod RecordOneTest(pTarget As %String)
 {
-	
-
 		Set lastID = ..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process")
 
 		Write !,"Last message ID found: " _ lastID
 
+		Write !,"**Please test the component using the management portal.."
+
+		Set latestID = lastID
+		While (latestID = lastID) {
+			Set latestID = ..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process")
+			Hang 2
+		}
+
+		/// A new message was detected, attempt to parse the input and output of this message
+		/// into JSON to be stored in the test definition file
+		Set reqMsgRequestHeader = ##class(Ens.MessageHeader).%OpenId(..GetLastMessageHeaderID("EnsLib.Testing.Process", pTarget))
+		Set reqMsgBodyClass = reqMsgRequestHeader.MessageBodyClassName
+		Set reqMsgBodyID = reqMsgRequestHeader.MessageBodyId
+		Set reqObj = $CLASSMETHOD(reqMsgBodyClass, "%OpenId", reqMsgBodyID)
+		Set reqJSON = ..PopulateJSONFromObject(reqObj)
+
+		Set respMsgRequestHeader = ##class(Ens.MessageHeader).%OpenId(..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process"))
+		Set respMsgBodyClass = respMsgRequestHeader.MessageBodyClassName
+		Set respMsgBodyID = respMsgRequestHeader.MessageBodyId
+		Set respObj = $CLASSMETHOD(respMsgBodyClass, "%OpenId", respMsgBodyID)
+		Set respJSON = ..PopulateJSONFromObject(respObj)
+
+		/// Print the test results out to the user
+		Write !,!,"Request Message",!
+		Set formatter = ##class(%JSON.Formatter).%New()
+
+		Do formatter.FormatToString(reqJSON, .reqFormatted)
+		Write reqFormatted
+
+		Write !,!,"Response Message",!
+
+		Do formatter.FormatToString(respJSON, .respFormatted)
+		Write respFormatted
+
 		Set accept = ..MakeBooleanPrompt("Accept test [A] or Reject [R]: ", "A,R")
 
 		If (accept = "R") {
-			Write "**Test has been rejected"
+			Write !,"**Test has been rejected"
 			Return ""
 		}
 		
@@ -242,29 +282,15 @@ ClassMethod RecordOneTest(pTarget As %String)
 
 		Read !,"Enter a name for this test: ", testName
 
-		/// A new message was detected, attempt to parse the input and output of this message
-		/// into JSON to be stored in the test definition file
-		Set msgRequestHeader = ##class(Ens.MessageHeader).%OpenId(..GetLastMessageHeaderID("EnsLib.Testing.Process", pTarget))
-		Set msgBodyClass = msgRequestHeader.MessageBodyClassName
-		Set msgBodyID = msgRequestHeader.MessageBodyId
-
-		Set obj = $CLASSMETHOD(msgBodyClass, "%OpenId", msgBodyID)
-
 		Set interaction = {}
 		Set interaction.name = testName
 		Set interaction.request = {}
-		Set interaction.request.class = msgBodyClass
-		Set interaction.request.properties = ..PopulateJSONFromObject(obj)
-		
-		Set msgRequestHeader = ##class(Ens.MessageHeader).%OpenId(..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process"))
-		Set msgBodyClass = msgRequestHeader.MessageBodyClassName
-		Set msgBodyID = msgRequestHeader.MessageBodyId
-
-		Set obj = $CLASSMETHOD(msgBodyClass, "%OpenId", msgBodyID)
+		Set interaction.request.class = reqMsgBodyClass
+		Set interaction.request.properties = reqJSON
 
 		Set interaction.response = {}
-		Set interaction.response.class = msgBodyClass
-		Set interaction.response.properties = ..PopulateJSONFromObject(obj)
+		Set interaction.response.class = respMsgBodyClass
+		Set interaction.response.properties = respJSON
 
 		Return interaction
 }
