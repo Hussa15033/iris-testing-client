@@ -158,25 +158,55 @@ ClassMethod MakeBooleanPrompt(pPrompt As %String, pAcceptedAnswers As %String)
 	Return action
 }
 
-ClassMethod Record(pProductionClass As %String, pTarget As %String, pTargetClass As %String)
+ClassMethod Record()
 {
+		Read !,"Enter the production class: ",pProductionClass
+
+		Set production = ##class(Ens.Config.Production).%OpenId(pProductionClass)
+
+
+		Read !,"Enter the target item name: ",pTargetName
+
+		Set pTarget = ""
+		For i=1:1:production.Items.Count() {
+			Set item = production.Items.GetAt(i)
+
+			#dim item As Ens.Config.Item
+			If (item.Name = pTargetName) {
+				Set pTarget = item
+			}
+		}
+
+		If (pTarget = "") {
+			Throw ##class(%Exception.General).%New("No item found","-3920",,"The production component named '" _ pTargetName _ "' was not found.")
+			Return
+		}
+
+		#dim pTarget As Ens.Config.Item
+
 		Set testDefinition = {}
 		Set testDefinition.production = pProductionClass
 		Set testDefinition.namespace = $NAMESPACE
 		Set testDefinition.tests = []
 		Set testSuite = {}
-		Set testSuite.name = pTarget
-		Set testSuite.class = pTargetClass
+		Set testSuite.name = pTarget.Name
+		Set testSuite.class = pTarget.ClassName
 		Set interactions = []
+
+		Write !,!,"**Selected production '" _ pProductionClass _ "'"
+		Write !,"**Selected target item '" _ pTarget.Name _ "'"
+		Write !,"**Selected target item class '" _ pTarget.ClassName _ "'",!
 
 		While (1) {
 			Set action = ..MakeBooleanPrompt("Record a new test [R] or exit [E]: ", "A,E")
 
 			If (action = "E") {
-				Write "Exiting..."
-				Write !,!
+				Write !,"Exiting..."
+				Write !
 				Set testSuite.interactions = interactions
 				Do testDefinition.tests.add(testSuite)
+
+				Write !,"Please paste this JSON into your test definition file:",!
 				Write testDefinition.%ToJSON()
 				Return
 			}
@@ -195,7 +225,6 @@ ClassMethod RecordOneTest(pTarget As %String)
 
 		Set lastID = ..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process")
 		Write !,"Last message ID found: " _ lastID
-
 
 		Set accept = ..MakeBooleanPrompt("Accept test [A] or Reject [R]: ", "A,R")
 
