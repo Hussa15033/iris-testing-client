@@ -240,6 +240,8 @@ ClassMethod RecordOneTest(pTarget As %String)
 			Return ""
 		}
 
+		Read !,"Enter a name for this test: ", testName
+
 		/// A new message was detected, attempt to parse the input and output of this message
 		/// into JSON to be stored in the test definition file
 		Set msgRequestHeader = ##class(Ens.MessageHeader).%OpenId(..GetLastMessageHeaderID("EnsLib.Testing.Process", pTarget))
@@ -249,7 +251,7 @@ ClassMethod RecordOneTest(pTarget As %String)
 		Set obj = $CLASSMETHOD(msgBodyClass, "%OpenId", msgBodyID)
 
 		Set interaction = {}
-		Set interaction.name = "Interaction"
+		Set interaction.name = testName
 		Set interaction.request = {}
 		Set interaction.request.class = msgBodyClass
 		Set interaction.request.properties = ..PopulateJSONFromObject(obj)
