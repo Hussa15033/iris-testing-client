@@ -164,7 +164,6 @@ ClassMethod Record()
 
 		Set production = ##class(Ens.Config.Production).%OpenId(pProductionClass)
 
-
 		Read !,"Enter the target item name: ",pTargetName
 
 		Set pTarget = ""
@@ -211,7 +210,7 @@ ClassMethod Record()
 				Return
 			}
 
-			Set interaction = ..RecordOneTest(pTarget)
+			Set interaction = ..RecordOneTest(pTarget.Name)
 
 			If (interaction '= "") {
 				Do interactions.add(interaction)
@@ -224,6 +223,7 @@ ClassMethod RecordOneTest(pTarget As %String)
 	
 
 		Set lastID = ..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process")
+
 		Write !,"Last message ID found: " _ lastID
 
 		Set accept = ..MakeBooleanPrompt("Accept test [A] or Reject [R]: ", "A,R")
