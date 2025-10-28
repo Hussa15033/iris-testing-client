@@ -62,19 +62,6 @@ Method LogColourMessage(pText As %String, pColour As %String = "black")
 
 ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests As %Boolean = 0, pExitOSProcess As %Boolean = 0) As %Status
 {
-	Set dir = ##class(%File).%New(pFileDirectory)
-	If ('##class(%File).DirectoryExists(pFileDirectory)) {
-		Write "[ERROR]: " _ "Directory '" _ pFileDirectory _ "' does not exist.. exiting"
-		Return $System.Status.Error("InitFailed", "Specified directory '" _ pFileDirectory _ "' does not exist")
-	}
-
-	Set ^UnitTestRoot = pFileDirectory
-
-	/// Update runtime parameters
-	/// Update the PRODUCTION parameter at runtime
-	Set tSC = $System.OBJ.UpdateConfigParam($CLASSNAME(), "PRODUCTION", pProduction)
-	$$$ThrowOnError(tSC)
-
 	/// Tool specific globals
 	Kill ^APTT
 	Set ^APTT.TestDefinitionDirectory = pFileDirectory
@@ -86,6 +73,20 @@ ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests 
 	Set ^APTT.TestsRan = 0
 	Set ^APTT.ExpectedErrors = 0
 	Set ^APTT.AccountedErrors = 0
+
+	Set dir = ##class(%File).%New(pFileDirectory)
+	If ('##class(%File).DirectoryExists(pFileDirectory)) {
+		Write "[ERROR]: " _ "Directory '" _ pFileDirectory _ "' does not exist.. exiting"
+		Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
+		Return $System.Status.Error("InitFailed", "Specified directory '" _ pFileDirectory _ "' does not exist")
+	}
+
+	Set ^UnitTestRoot = pFileDirectory
+
+	/// Update runtime parameters
+	/// Update the PRODUCTION parameter at runtime
+	Set tSC = $System.OBJ.UpdateConfigParam($CLASSNAME(), "PRODUCTION", pProduction)
+	$$$ThrowOnError(tSC)
 	
 	// Run the super Run() method
 	/// The tSC returned by the Super.Run() method is unrelated to whether the tests passed or not, so we cannot use it
