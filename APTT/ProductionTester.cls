@@ -77,6 +77,7 @@ ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests 
 	Set dir = ##class(%File).%New(pFileDirectory)
 	If ('##class(%File).DirectoryExists(pFileDirectory)) {
 		Write "[ERROR]: " _ "Directory '" _ pFileDirectory _ "' does not exist.. exiting"
+		Write:pExitOSProcess=1 !,"Exiting with process code "_^APTT.Success
 		Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
 		Return $System.Status.Error("InitFailed", "Specified directory '" _ pFileDirectory _ "' does not exist")
 	}
