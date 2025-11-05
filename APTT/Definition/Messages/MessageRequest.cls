@@ -61,7 +61,7 @@ Method AssertEquals(pStr1, pStr2, pFailMessage) As %Status [ Private ]
 Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %DynamicObject) [ Private ]
 {
 	If ('$ISOBJECT(pJSON) || 'pJSON.%Extends("%DynamicObject")) {
-		Throw ##class(%Exception.General).%New("Cannot populate object","-303",,"Cannot populate ObjectScript object of type " _ $CLASSNAME(pObj) _ " as JSON is not a valid %DynamicObject, the JSON is likely a primitive data type that cannot be set to this ObjectScript object.")
+		Throw ##class(%Exception.General).%New("Cannot populate object","-303",,"Cannot populate ObjectScript object of type " _ $CLASSNAME(pObj) _ " as JSON is not a valid %DynamicObject.")
 	}
 
 	/// This method loops through all of the properties in the JSON and sets their value in the
@@ -82,7 +82,12 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 		If ((OSType = value) || (OSType = "")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
 			/// Both the JSON and ObjectScript field are primitive data types, simply set the property value
 			Set $PROPERTY(pObj, key) = value
-		} ElseIf (CollectionType = "list") {
+		} ElseIf ($CLASSMETHOD(OSType, "%Extends", "%Stream.Object")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
+			/// The ObjectScript property is a Stream and the JSON is a primitive type
+			/// Write the JSON primitive to the stream
+			Set tSC = $METHOD($PROPERTY(pObj, key), "Write", pJSON)
+			Throw:$$$ISERR(tSC) ##class(%Exception.StatusException).ThrowIfInterrupt(tSC)
+		 }ElseIf (CollectionType = "list") {
 			Do ..AssertEquals(jsonType, "array")
 
 			/// We are mapping an array in JSON to either a list of primitive data types in ObjectScript
