@@ -60,8 +60,8 @@ Method AssertEquals(pStr1, pStr2, pFailMessage) As %Status [ Private ]
 /// Todo: Move this method to a helper class, along with the reverse method of turning an object to JSON
 Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %DynamicObject) [ Private ]
 {
-	If ('pJSON.%Extends("%DynamicObject")) {
-		Throw ##class(%Exception.General).%New("Cannot populate object","-303",,"Cannot populate ObjectScript object of type " _ $CLASSNAME(pObj) _ " as JSON is not a valid %DynamicObject")
+	If ('$ISOBJECT(pJSON) || 'pJSON.%Extends("%DynamicObject")) {
+		Throw ##class(%Exception.General).%New("Cannot populate object","-303",,"Cannot populate ObjectScript object of type " _ $CLASSNAME(pObj) _ " as JSON is not a valid %DynamicObject, the JSON is likely a primitive data type that cannot be set to this ObjectScript object.")
 	}
 
 	/// This method loops through all of the properties in the JSON and sets their value in the
