@@ -23,7 +23,7 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 	#dim responseJSON As %DynamicObject
 	Set responseJSON = pJSON.response
 	If (responseJSON = "") {
-		Throw ##class(%Exception.General).%New("Invalid JSON","-11",,"The request property does not exist for interaction")
+		Throw ##class(%Exception.General).%New("Invalid JSON","-11",,"The 'response' property does not exist for interaction")
 	}
 
 	/// Create a new message 
@@ -213,20 +213,21 @@ Method BuildAllPaths(pJSON, Output paths As %ArrayOfDataTypes, curPath = "")
 }
 
 /// This validates the interaction to ensure the response we actually got back from
-/// the production (ObjectScript:<property>pResponse</property>) matches the response
+/// the production (ObjectScript:<property>pMessage</property>) matches the response
 /// that we expected from this interaction (JSON:<property>MessageResponse</property>)
 /// 
 /// May throw an error if there was a problem with validating the response
 /// against the expected response
 /// 
-/// The default behaviour is to check all fields of the actual <property>pResponse</property>
+/// The default behaviour is to check all fields of the actual <property>pMessage</property>
 /// match the fields exactly as shown in <property>..Properties</property>, however the validators
 /// specified in <property>..Validators</property> will overwrite the default behaviour
 /// 
-Method ValidateResponse(pResponse As Ens.Response) As %Status
+Method ValidateResponse(pMsgHeader As Ens.MessageHeader) As %Status
 {
-	If ($CLASSNAME(pResponse) '= ..ClassName) {
-		Throw ##class(%Exception.General).%New("Invalid class","-553",,"Expected response of type '" _ ..ClassName _ "' but actual response was of type '" _ $CLASSNAME(pResponse) _ "'")
+	Set pMessage = $CLASSMETHOD(pMsgHeader.MessageBodyClassName, "%OpenId", pMsgHeader.MessageBodyId)
+	If ($CLASSNAME(pMessage) '= ..ClassName) {
+		Throw ##class(%Exception.General).%New("Invalid class","-553",,"Expected response of type '" _ ..ClassName _ "' but actual response was of type '" _ pMsgHeader.MessageBodyClassName _ "'")
 	}
 	Set JSON = ..Properties
 
@@ -267,7 +268,7 @@ Method ValidateResponse(pResponse As Ens.Response) As %Status
 
 		/// Now run the validator for this path, resolving the path as needed with
 		/// the method <method>..ResolveDotPath()</method>
-		Set actualValue = ..ResolveDotPath(path, pResponse)
+		Set actualValue = ..ResolveDotPath(path, pMessage)
 		Set validator = ..Validators.GetAt(path)
 
 		/// Run the validator, will throw a validation error if one occurs

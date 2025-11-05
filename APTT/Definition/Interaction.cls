@@ -7,6 +7,8 @@ Property MessageRequest As APTT.Definition.Messages.MessageRequest(%JSONFIELDNAM
 
 Property MessageResponse As APTT.Definition.Messages.MessageResponse(%JSONFIELDNAME = "response");
 
+Property AsyncMessages As list Of APTT.Definition.Messages.AsyncMessage(%JSONFIELDNAME = "asyncmessages");
+
 Storage Default
 {
 <Data name="InteractionState">
@@ -18,6 +20,9 @@ Storage Default
 </Value>
 <Value name="3">
 <Value>Name</Value>
+</Value>
+<Value name="4">
+<Value>AsyncMessages</Value>
 </Value>
 </Data>
 <State>InteractionState</State>

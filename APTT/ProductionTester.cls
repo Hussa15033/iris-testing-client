@@ -34,6 +34,8 @@ Property AccountedErrors As %Integer [ InitialExpression = 0 ];
 
 Property CheckedBaseLogID As %Integer [ InitialExpression = -1 ];
 
+Property CheckedBaseMessageHeaderID As %Integer [ InitialExpression = -1 ];
+
 Method ColourText(pText As %String, pColour As %String = "black") As %String
 {
 	Set cCode = $CASE(
@@ -118,8 +120,12 @@ Method OnBeforeProductionStart() As %Status
 		Do $$$AssertFailure("No test definition directory was specified")
 	}
 
-	Do ..LogMessage("-->Loading test definition files from directory '" _ testDefinitionDirectory _ "'")
+	Do ..LogColourMessage("-->Loading test definition files from directory '" _ testDefinitionDirectory _ "'", "blue")
 	Set tSC = ..LoadTestDefinitionFiles(testDefinitionDirectory)
+
+	Set ..CheckedBaseMessageHeaderID = ..GetLastMessageHeaderID()
+
+	Do ..LogColourMessage("-->Last Message Header ID set to " _ ..CheckedBaseMessageHeaderID, "blue")
 	Return:'$$$ISOK(tSC) tSC
 
 
@@ -189,7 +195,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 			Do ..LogColourMessage("---->Loading " _ filename _ "...", "blue")
 			Set testSuite = ##class(APTT.Parser).LoadFileAsTestSuite(path)
 
-			Do ..LogColourMessage("---->Loaded", "green")
+			Do ..LogColourMessage("------>Loaded", "green")
 
 			/// Throw errors if any of the test definition files have a different target namespace or production
 			Throw:testSuite.TargetNamespace'=$NAMESPACE ##class(%Exception.General).%New("Incorrect namespace","-93",,"The namespace specified '" _ testSuite.TargetNamespace _ "' is different to the selected namespace '" _ $NAMESPACE _ "'. Ensure all test definition files have the same target namespace")
@@ -211,7 +217,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 	}
 	
 	If ..Suites.Size = 0 {
-		Do ..LogMessage("No test suites found")
+		Do ..LogMessage("-->No test suites found")
 		Return:^APTT.ExpectTests=1 ..Error("Tests were expected, however none were loaded")
 	} Else {
 		Do ..LogColourMessage("-->" _ ..Suites.Size _ " test suites loaded", "blue")
@@ -219,6 +225,140 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 	}
 
 	Return $$$OK
+}
+
+Method GetLastMessageHeaderID()
+{
+	&sql(SELECT ID INTO :lastMessageHeaderID FROM Ens.MessageHeader ORDER BY id DESC)
+    IF SQLCODE<0 {WRITE "SQLCODE error ",SQLCODE," ",%msg  QUIT}
+
+	Return lastMessageHeaderID
+}
+
+Method ExecuteActions(pActionString As %String)
+{
+	Return:pActionString=""
+
+	Set actions = $LISTFROMSTRING(pActionString, ",")
+
+	For i=1:1:$LL(actions) {
+		Set action = $LISTGET(actions, i)
+		Set actionName = $PIECE(action, ":", 1, 1)
+		Set actionValue = $PIECE(action, ":", 2, 2)
+		If (actionName = "wait") {
+			Do ..LogColourMessage("------>Performing action: waiting for " _ actionValue _ " seconds", "blue")
+			Hang actionValue
+		} ElseIf (actionName = "stop") {
+			Do ..LogColourMessage("------>Performing action: stopping item " _ actionValue, "blue")
+			Set tSC = ##class(Ens.Director).EnableConfigItem(actionValue, 0, 0)
+			$$$ThrowOnError(tSC)
+			Set tSC = ##class(Ens.Director).UpdateProduction(10, 1, 0)
+			$$$ThrowOnError(tSC)
+		} ElseIf (actionName = "start") {
+			Do ..LogColourMessage("------>Performing action: starting item " _ actionValue, "blue")
+			Set tSC = ##class(Ens.Director).EnableConfigItem(actionValue, 1, 0)
+			$$$ThrowOnError(tSC)
+			Set tSC = ##class(Ens.Director).UpdateProduction(10, 1, 0)
+			$$$ThrowOnError(tSC)
+		} Else {
+			Throw ##class(%Exception.General).%New("Unknown action: " _ actionName _ " given",,"-30422","The selected action does not exist.")
+		}
+	}
+}
+
+Method GetUnixTimestamp()
+{
+	Return $ZDT($H, -2)
+}
+
+Method VerifyAsyncMessages(pAsyncMessages As %ListOfObjects) As %Status
+{
+	Set verifiedMessageHeaderIds = ""
+	Set totalAsyncMessages = 0
+
+	Set ..CheckedBaseMessageHeaderID = ..GetLastMessageHeaderID()
+	Set baseMessageHeaderID = ..CheckedBaseMessageHeaderID
+	For i=1:1:pAsyncMessages.Size {
+		#dim asyncMessage As APTT.Definition.Messages.AsyncMessage
+		Set asyncMessage = pAsyncMessages.GetAt(i)
+		
+		If (asyncMessage.Source = "") || (asyncMessage.Target = "") {
+			/// If source or target is empty, likely the it is a dud object
+			/// that was inserted on import
+			Continue
+		}
+
+		/// We keep our own count of async messages, since pAsyncMessages.Size is unreliable due to dud objects that were inserted purposefully
+		Set totalAsyncMessages = totalAsyncMessages + 1
+		Set timeout = asyncMessage.Timeout
+		If (timeout < 1) || (timeout > 600) {
+			Throw ##class(%Exception.General).%New("Timeout too longer",,"-30411","A timeout of " _ timeout _ " is unacceptable for an async message. Ensure the timeout is between 1 second and 600 seconds")
+		}
+
+		Set messageVerified = 0
+		Set startTime = ..GetUnixTimestamp()
+		Set endTime = ..GetUnixTimestamp() + timeout
+		Do ..LogColourMessage("------>Waiting up to " _ timeout _ " seconds for async message", "blue")
+		
+		Set failedHeaderIDs = ""
+
+		While ..GetUnixTimestamp() < endTime {
+			/// Search all messages that could validate this method
+			Set sql = ##class(%SQL.Statement).%ExecDirect(,"SELECT id FROM Ens.MessageHeader WHERE id > ? AND MessageBodyClassName != ''", baseMessageHeaderID)
+
+			/// Execute the actions intended to be executed before the async tests
+			Do ..ExecuteActions(asyncMessage.Before)
+			While sql.%Next() {
+				Set headerID = sql.%Get("id")
+				If ($LISTFIND(failedHeaderIDs, headerID)) {
+					/// Skip the comparison, since we have already compared these messages
+					Hang 1
+					Continue
+				}
+				Set messageHeader = ##class(Ens.MessageHeader).%OpenId(headerID)
+				Set valid = 0
+				
+				If (messageHeader.SourceConfigName = asyncMessage.Source) && (messageHeader.TargetConfigName = asyncMessage.Target) {
+					Do ..LogColourMessage("-------->Validating message header with ID " _ headerID _ " against async message", "blue")
+					Try {
+						Set valid = asyncMessage.ValidateResponse(messageHeader)
+					} Catch ex {
+						Set messageVerified = 0
+						/// Print for informational purposes
+						Do ..LogColourMessage("---------->Validation failed", "black")
+						Do ..LogColourMessage("-------->Continuing to wait for " _ (endTime - ..GetUnixTimestamp()) _ " seconds..", "blue")
+						Set $LIST(failedHeaderIDs, *+1) = headerID
+					}
+				} Else {
+					Set $LIST(failedHeaderIDs, *+1) = headerID
+				}
+
+				If ($$$ISOK(valid) && '$LISTFIND(verifiedMessageHeaderIds, headerID)) {
+					Set $LIST(verifiedMessageHeaderIds, *+1) = $lb(headerID)
+					Set messageVerified = 1
+					Quit
+				}
+			}
+
+			Quit:messageVerified
+			
+			Do ..ExecuteActions(asyncMessage.After)
+			Hang 1
+		}
+
+
+		If (messageVerified) {
+			Do ..LogColourMessage("---------->Async message successfully verified after " _ (..GetUnixTimestamp() - startTime) _ " seconds", "green")
+		} Else {
+			Do ..LogColourMessage("---------->Async message failed to be detected after " _ (..GetUnixTimestamp() - startTime) _ " seconds", "red")
+		}
+	}
+
+	If ($LISTLENGTH(verifiedMessageHeaderIds) = totalAsyncMessages) {
+		Return $$$OK
+	} Else {
+		Return $System.Status.Error("AsyncMessagesFailed", "Failed to verify all async messages")
+	}
 }
 
 Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Private ]
@@ -275,7 +415,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 			If (interaction.Name '= "") {
 				Do ..LogColourMessage("---->Running interaction named '" _ interaction.Name _ "'", "blue")
 			} Else {
-				Do ..LogColourMessage("------>Running interaction with index " _ j, "blue")
+				Do ..LogColourMessage("---->Running interaction with index " _ j, "blue")
 			}
 
 			Do $I(^APTT.TestsRan, 1)
@@ -283,11 +423,11 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 			/// Generate the Ens.Request message we will be sending into the
 			/// production
 			Try {
-				Do ..LogMessage("-------->Generating request message " _ interaction.MessageRequest.ClassName _ "...")
+				Do ..LogMessage("------>Generating request message " _ interaction.MessageRequest.ClassName _ "...")
 				Set requestMessage = interaction.MessageRequest.GenerateMessageRequest()
 
 				/// Send the message into the production
-				Do ..LogMessage("-------->Sending request to " _ targetHostName)
+				Do ..LogMessage("-------Sending request to " _ targetHostName)
 				Set tSC = ..SendRequest(targetHostName, requestMessage, .responseMessage, 1)
 				Do:'$$$ISOK(tSC) ..LogMessage("Errors occurred during interaction, validating errors...")
 
@@ -296,12 +436,25 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 				$$$ThrowOnError(tSC)
 				
 				/// Now validate the response against what we expect
-				Set validationSC = interaction.MessageResponse.ValidateResponse(responseMessage)
+				Set responseClassName = $CLASSNAME(responseMessage)
+				Set baseMessageHeaderID = ..CheckedBaseMessageHeaderID
+				Set messageBodyID = responseMessage.%Id()
+				&sql(SELECT ID INTO :responseMessageHeaderID FROM Ens.MessageHeader WHERE MessageBodyClassName = :responseClassName AND MessageBodyId = :messageBodyID AND id > :baseMessageHeaderID ORDER BY id DESC)
+				IF SQLCODE<0 {WRITE "SQLCODE error ",SQLCODE," ",%msg  QUIT}
+
+				Set validationSC = interaction.MessageResponse.ValidateResponse(##class(Ens.MessageHeader).%OpenId(responseMessageHeaderID))
 				$$$ThrowOnError(validationSC)
 
-				Do:$$$ISOK(validationSC) $I(^APTT.TestsPassed, 1)
 				Do $$$AssertStatusOK(validationSC)
-				Do ..LogColourMessage("-------->Response message is valid", "green")
+				Do ..LogColourMessage("------>Sync Response message is valid", "green")
+
+				/// Check if any Async messages are expected after this interaction
+				/// and loop through them, waiting to verify them
+				Set asyncSC = ..VerifyAsyncMessages(interaction.AsyncMessages)
+				$$$ThrowOnError(asyncSC)
+				Do $$$AssertStatusOK(asyncSC)
+
+				Do:$$$ISOK(validationSC)&&$$$ISOK(asyncSC) $I(^APTT.TestsPassed, 1)
 			} Catch ex {
 				Set interactionName = "Interaction index " _ j
 				Set:interaction.Name'="" interactionName = interaction.Name
@@ -362,7 +515,7 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 
 	Quit:expectedErrCnt'=n $System.Status.Error(5001,"Expected " _ expectedErrCnt _ " errors but " _ n _ " errors occurred since last interaction")
 
-	Do:$$$ISOK(tSC) ..LogColourMessage("Expected " _ expectedErrCnt _ " errors and detected " _ n _ " errors, test passed", "green")
+	Do:$$$ISOK(tSC) ..LogColourMessage("-------->Expected " _ expectedErrCnt _ " errors and detected " _ n _ " errors", "green")
 	Quit tSC
 }
 
