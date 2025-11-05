@@ -85,7 +85,7 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 		} ElseIf ($CLASSMETHOD(OSType, "%Extends", "%Stream.Object")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
 			/// The ObjectScript property is a Stream and the JSON is a primitive type
 			/// Write the JSON primitive to the stream
-			Set tSC = $METHOD($PROPERTY(pObj, key), "Write", pJSON)
+			Set tSC = $METHOD($PROPERTY(pObj, key), "Write", value)
 			Throw:$$$ISERR(tSC) ##class(%Exception.StatusException).ThrowIfInterrupt(tSC)
 		 }ElseIf (CollectionType = "list") {
 			Do ..AssertEquals(jsonType, "array")
