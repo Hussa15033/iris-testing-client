@@ -3,11 +3,11 @@ Class APTT.Definition.Messages.AsyncMessage Extends APTT.Definition.Messages.Mes
 
 Parameter MESSAGECLASS = "Ens.MessageBody";
 
-Property Source As %String(%JSONFIELDNAME = "source");
+Property Source As %String;
 
-Property Target As %String(%JSONFIELDNAME = "target");
+Property Target As %String;
 
-Property Timeout As %Integer(%JSONFIELDNAME = "timeout");
+Property Timeout As %Integer;
 
 Property Before As %String(MAXLEN = 10000);
 
