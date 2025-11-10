@@ -507,7 +507,7 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 				Do ..LogColourMessage("Error " _ i _ " is an expected error and contains the specified text", "green")
 			}
 		} Else {
-			Do ..LogColourMessage("[" _ configName _ "]: Error occurred - " _ errText)
+			Do ..LogMessage("[" _ configName _ "]: Error occurred - " _ errText)
 			Do $I(^APTT.AccountedErrors, 1)
 		}
 	}
