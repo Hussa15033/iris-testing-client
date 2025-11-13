@@ -1,7 +1,7 @@
 /// 
 /// Abstract message class used to encapsulate request and response messages
 /// 
-/// @author Auwais Hussain
+/// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 05.08.2025
 /// 
 Class APTT.Definition.Messages.Message Extends %SerialObject [ Abstract ]

@@ -1,7 +1,7 @@
 /// 
 /// A Parser utility for loading test definition .JSON files
 /// 
-/// @author Auwais Hussain
+/// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 04.08.2025
 /// 
 Class APTT.Parser

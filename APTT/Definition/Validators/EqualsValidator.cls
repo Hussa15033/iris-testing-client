@@ -2,6 +2,10 @@
 /// The default and most basic validator.
 /// 
 /// It checks to ensure the expected value and the actual value match, no options are expected
+/// 
+/// @author Auwais Hussain (ahussain@intersystems.com)
+/// @version 01.08.2025
+/// 
 Class APTT.Definition.Validators.EqualsValidator Extends APTT.Definition.Validators.Base
 {
 

@@ -1,3 +1,10 @@
+/// 
+/// A test case is targeted at a single component within the production. It takes a list of interactions which are sent to the component
+/// and the responses compared/validated
+/// 
+/// @author Auwais Hussain (ahussain@intersystems.com)
+/// @version 05.08.2025
+/// 
 Class APTT.Definition.TestCase Extends (%SerialObject, %JSON.Adaptor)
 {
 

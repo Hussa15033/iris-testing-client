@@ -1,3 +1,11 @@
+/// 
+/// Message class responsible for parsing Asynchronous messages.
+/// 
+/// These messages include a timeout and are expected to be in response to an interaction
+/// 
+/// @author Auwais Hussain (ahussain@intersystems.com)
+/// @version 05.11.2025
+/// 
 Class APTT.Definition.Messages.AsyncMessage Extends APTT.Definition.Messages.MessageResponse
 {
 

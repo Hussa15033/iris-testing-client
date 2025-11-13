@@ -1,3 +1,11 @@
+/// 
+/// A test suite is the foundation of a test definition file. It takes in a list of test cases aimed at various
+/// components within the production. It is recommended to separate tests on a per-component basis, having 1 file
+/// testing 1 component.
+/// 
+/// @author Auwais Hussain (ahussain@intersystems.com)
+/// @version 05.08.2025
+/// 
 Class APTT.Definition.TestSuite Extends (%SerialObject, %JSON.Adaptor)
 {
 

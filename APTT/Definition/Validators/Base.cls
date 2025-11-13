@@ -1,3 +1,13 @@
+/// 
+/// Base validator class
+/// 
+/// Each validator can take custom options to customise the behaviour of the validator, e.g. use regex, search lists etc.
+/// 
+/// Inherit from the base class and implement the OnValidate() method. Modify the VALIDOPTIONS parameter with a comma separated list of options the validator takes
+/// 
+/// @author Auwais Hussain (ahussain@intersystems.com)
+/// @version 04.08.2025
+/// 
 Class APTT.Definition.Validators.Base Extends (%RegisteredObject, %SerialObject) [ Abstract ]
 {
 

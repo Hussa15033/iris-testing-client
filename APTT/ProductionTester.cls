@@ -14,7 +14,7 @@
 /// 	- Run with
 /// 		Do ##class(APTT.ProductionTester).Run("/path/to/your/test/definitions/directory", "<your production name>")
 /// 
-/// @author Auwais Hussain
+/// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 0.6
 /// 
 Class APTT.ProductionTester Extends %UnitTest.TestProduction

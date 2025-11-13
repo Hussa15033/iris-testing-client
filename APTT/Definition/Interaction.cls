@@ -1,3 +1,10 @@
+/// 
+/// Represents an interaction, which is a Request/Response message pair going into a component. The AsyncMessages can be used to
+/// test for asynchronous messages after the interaction occurs.
+/// 
+/// @author Auwais Hussain (ahussain@intersystems.com)
+/// @version 05.11.2025
+/// 
 Class APTT.Definition.Interaction Extends (%SerialObject, %JSON.Adaptor)
 {
 

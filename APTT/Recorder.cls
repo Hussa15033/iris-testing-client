@@ -10,7 +10,7 @@
 /// 4. After recording a test, the test summary will be displayed in the console. Choose whether to Accept [A] or Reject [R] the test
 /// 5. All accepted tests will be saved to the test definition file
 /// 
-/// @author Auwais Hussain
+/// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 26.10.2025
 /// 
 Class APTT.Recorder Extends %RegisteredObject
