@@ -150,15 +150,16 @@ ClassMethod MakeBooleanPrompt(pPrompt As %String, pAcceptedAnswers As %String)
 	Set acceptedAns = $LISTFROMSTRING(pAcceptedAnswers, ",")
 	Set action = ""
 	
-	While (action = "" && '$LISTFIND(acceptedAns, action)) {
+	While (action = "" || '$LISTFIND(acceptedAns, action)) {
 		Write !,pPrompt
 		Read action
+		WRITE !,$LISTFIND(acceptedAns, action)
 	}
 
 	Return action
 }
 
-ClassMethod Record(pProductionClass As %String, pTargetName As %String)
+ClassMethod Record(pProductionClass As %String = "", pTargetName As %String = "")
 {
 		If (pProductionClass = "") {
 			Read !,"Enter the production class: ",pProductionClass
@@ -205,7 +206,7 @@ ClassMethod Record(pProductionClass As %String, pTargetName As %String)
 		Write !,"**Selected target item class '" _ pTarget.ClassName _ "'",!
 
 		While (1) {
-			Set action = ..MakeBooleanPrompt("Record a new test [R] or exit [E]: ", "A,E")
+			Set action = ..MakeBooleanPrompt("Record a new test [R] or exit [E]: ", "R,E")
 
 			If (action = "E") {
 				Write !,"Exiting..."
