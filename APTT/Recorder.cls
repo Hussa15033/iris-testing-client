@@ -153,7 +153,6 @@ ClassMethod MakeBooleanPrompt(pPrompt As %String, pAcceptedAnswers As %String)
 	While (action = "" || '$LISTFIND(acceptedAns, action)) {
 		Write !,pPrompt
 		Read action
-		WRITE !,$LISTFIND(acceptedAns, action)
 	}
 
 	Return action

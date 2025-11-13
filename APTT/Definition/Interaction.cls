@@ -8,7 +8,7 @@
 Class APTT.Definition.Interaction Extends (%SerialObject, %JSON.Adaptor)
 {
 
-Property Name As %String(%JSONFIELDNAME = "name");
+Property Name As %String(%JSONFIELDNAME = "name", MAXLEN = "");
 
 Property MessageRequest As APTT.Definition.Messages.MessageRequest(%JSONFIELDNAME = "request");
 
