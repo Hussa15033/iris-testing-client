@@ -172,7 +172,6 @@ Method OnAfterProductionStop() As %Status
 		Set ^APTT.Success = 0
 	}
 
-	zw ..Storage
 	Write ..Storage.%ToJSON()
 
 	Quit $$$OK
