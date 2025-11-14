@@ -119,6 +119,9 @@ Storage Default
 <Value name="10">
 <Value>After</Value>
 </Value>
+<Value name="11">
+<Value>ResultStore</Value>
+</Value>
 </Data>
 <Type>%Storage.Serial</Type>
 }

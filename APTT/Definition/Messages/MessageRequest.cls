@@ -10,6 +10,8 @@ Class APTT.Definition.Messages.MessageRequest Extends APTT.Definition.Messages.M
 /// Message classes from the test definition file MUST be a child of Ens.Request
 Parameter MESSAGECLASS = "Ens.Request";
 
+Property Fill As %DynamicObject;
+
 /// 
 /// <p>Parse JSON object into an instance of this MessageRequest class</p>
 /// <p><property>pJSON</property> - The JSON object to parse</p>
@@ -35,8 +37,13 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 /// 
 /// <p>Nested object properties will also be instantiated and populated</p>
 /// 
-Method GenerateMessageRequest()
+Method GenerateMessageRequest(pStorage As %DynamicObject = "")
 {
+	If (pStorage = "") {
+		Set pStorage = {}
+	}
+
+	Set ..Fill = pStorage
 	#dim messageObj As Ens.Request
 	Try {
 		Set messageObj = $CLASSMETHOD(..ClassName, "%New")
@@ -81,6 +88,20 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 		#; w "ObjectScript type: "_OSType,!
 		#; w "ObjectScript type 2: " _ CollectionType _ "||" _ DataType,!
 		#; w "JSON Type: " _ jsonType,!
+
+		If ((OSType = value) || (OSType = "")) {
+			/// The objectscript type is a string, check if it is a variable (in format ${varname}, inspired by Gitlab)
+			If (($EXTRACT(value, 1, 2) = "${") && (value [ "}")) {
+				/// Likely a variable, extract the variable name
+				Set varName = $EXTRACT(value, 3, *-1)
+				If (..Fill.%IsDefined(varName)) {
+					Set varValue = ..Fill.%Get(varName)
+					Set value = varValue
+				} Else {
+					Throw ##class(%Exception.General).%New("Cannot create request message: variable does not exist","-3392",,"The variable " _ varName _ " does not exist - cannot populate message, Key: " _ key _ ", JSON: " _ value)
+				}
+			}
+		}
 
 		If ((OSType = value) || (OSType = "")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
 			/// Both the JSON and ObjectScript field are primitive data types, simply set the property value
@@ -157,6 +178,17 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 
 Storage Default
 {
+<Data name="MessageState">
+<Value name="1">
+<Value>ClassName</Value>
+</Value>
+<Value name="2">
+<Value>Properties</Value>
+</Value>
+<Value name="3">
+<Value>Fill</Value>
+</Value>
+</Data>
 <Type>%Storage.Serial</Type>
 }
 

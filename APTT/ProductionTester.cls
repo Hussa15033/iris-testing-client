@@ -36,6 +36,8 @@ Property CheckedBaseLogID As %Integer [ InitialExpression = -1 ];
 
 Property CheckedBaseMessageHeaderID As %Integer [ InitialExpression = -1 ];
 
+Property Storage As %DynamicObject;
+
 Method ColourText(pText As %String, pColour As %String = "black") As %String
 {
 	Set cCode = $CASE(
@@ -120,6 +122,8 @@ Method OnBeforeProductionStart() As %Status
 		Do $$$AssertFailure("No test definition directory was specified")
 	}
 
+	Set ..Storage = {}
+
 	Do ..LogColourMessage("-->Loading test definition files from directory '" _ testDefinitionDirectory _ "'", "blue")
 	Set tSC = ..LoadTestDefinitionFiles(testDefinitionDirectory)
 
@@ -168,6 +172,8 @@ Method OnAfterProductionStop() As %Status
 		Set ^APTT.Success = 0
 	}
 
+	zw ..Storage
+	Write ..Storage.%ToJSON()
 
 	Quit $$$OK
 }
@@ -230,7 +236,12 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 Method GetLastMessageHeaderID()
 {
 	&sql(SELECT ID INTO :lastMessageHeaderID FROM Ens.MessageHeader ORDER BY id DESC)
-    IF SQLCODE<0 {WRITE "SQLCODE error ",SQLCODE," ",%msg  QUIT}
+    If (SQLCODE < 0) {
+		Write "SQLCODE error ",SQLCODE," ",%msg 
+		Quit
+	} ElseIf (SQLCODE = 100) {
+		Return 0
+	}
 
 	Return lastMessageHeaderID
 }
@@ -321,7 +332,7 @@ Method VerifyAsyncMessages(pAsyncMessages As %ListOfObjects) As %Status
 				If (messageHeader.SourceConfigName = asyncMessage.Source) && (messageHeader.TargetConfigName = asyncMessage.Target) {
 					Do ..LogColourMessage("-------->Validating message header with ID " _ headerID _ " against async message", "blue")
 					Try {
-						Set valid = asyncMessage.ValidateResponse(messageHeader)
+						Set valid = asyncMessage.ValidateResponse(messageHeader, ..Storage)
 					} Catch ex {
 						Set messageVerified = 0
 						/// Print for informational purposes
@@ -417,14 +428,13 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 			} Else {
 				Do ..LogColourMessage("---->Running interaction with index " _ j, "blue")
 			}
-
 			Do $I(^APTT.TestsRan, 1)
 
 			/// Generate the Ens.Request message we will be sending into the
 			/// production
 			Try {
 				Do ..LogMessage("------>Generating request message " _ interaction.MessageRequest.ClassName _ "...")
-				Set requestMessage = interaction.MessageRequest.GenerateMessageRequest()
+				Set requestMessage = interaction.MessageRequest.GenerateMessageRequest(..Storage)
 
 				/// Send the message into the production
 				Do ..LogMessage("-------Sending request to " _ targetHostName)
@@ -437,15 +447,26 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 				
 				/// Now validate the response against what we expect
 				Set responseClassName = $CLASSNAME(responseMessage)
-				Set baseMessageHeaderID = ..CheckedBaseMessageHeaderID
-				Set messageBodyID = responseMessage.%Id()
-				&sql(SELECT ID INTO :responseMessageHeaderID FROM Ens.MessageHeader WHERE MessageBodyClassName = :responseClassName AND MessageBodyId = :messageBodyID AND id > :baseMessageHeaderID ORDER BY id DESC)
-				IF SQLCODE<0 {WRITE "SQLCODE error ",SQLCODE," ",%msg  QUIT}
+				
+				If (responseClassName '= interaction.MessageResponse.ClassName) {
+					/// We did not expect a response here
+					Throw ##class(%Exception.General).%New("Response class mismatch","-3111",,"Expected a response of type '" _ interaction.MessageResponse.ClassName _ "' but received '" _ responseClassName _ "'")
+				}
 
-				Set validationSC = interaction.MessageResponse.ValidateResponse(##class(Ens.MessageHeader).%OpenId(responseMessageHeaderID))
-				$$$ThrowOnError(validationSC)
+				/// Validate the response if one was expected			
+				If (responseClassName '= "") {
+					Set baseMessageHeaderID = ..CheckedBaseMessageHeaderID
+					Set messageBodyID = responseMessage.%Id()
+					&sql(SELECT ID INTO :responseMessageHeaderID FROM Ens.MessageHeader WHERE MessageBodyClassName = :responseClassName AND MessageBodyId = :messageBodyID AND id > :baseMessageHeaderID ORDER BY id DESC)
+					IF SQLCODE<0 {WRITE "SQLCODE error ",SQLCODE," ",%msg  QUIT}
+					Set validationSC = interaction.MessageResponse.ValidateResponse(##class(Ens.MessageHeader).%OpenId(responseMessageHeaderID), ..Storage)
+					$$$ThrowOnError(validationSC)
 
-				Do $$$AssertStatusOK(validationSC)
+					Do $$$AssertStatusOK(validationSC)
+				} Else {
+					Set validationSC = $$$OK
+				}
+
 				Do ..LogColourMessage("------>Sync Response message is valid", "green")
 
 				/// Check if any Async messages are expected after this interaction
@@ -472,6 +493,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 /// that were expected from this interaction are accounted for
 Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %Status
 {
+	Write "Checking interaction errors.."
 	Do ..LogColourMessage("Running CheckInteractionErrors()", "blue")
 	If (..CheckedBaseLogID = -1) {
 		/// If base log ID not initialized, set to production base default

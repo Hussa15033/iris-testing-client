@@ -12,6 +12,8 @@ Parameter MESSAGECLASS = "Ens.Response";
 
 Property Validators As array Of APTT.Definition.Validators.Base;
 
+Property ResultStore As array Of %String;
+
 Property ExpectedErrors As list Of %String;
 
 Property ExpectedErrorCount As %Integer [ InitialExpression = 0 ];
@@ -51,6 +53,19 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 				Throw ##class(%Exception.General).%New("Failed to initialise validator","-499",,"The validator class '" _ validatorClass _ "' could not be initialised: " _ ex.DisplayString())
 			}
 			Do message.Validators.SetAt(validator, fieldName)
+		}
+	}
+
+	/// If any storage variables have been defined, add them to the ResultStore array
+	If (responseJSON.%IsDefined("store")) {
+		#dim store As %DynamicObject
+		Set store = responseJSON.%Get("store")
+
+		Set iter = store.%GetIterator()
+
+		/// Update the result store
+		While (iter.%GetNext(.path, .varName, .type)) {
+			Do message.ResultStore.SetAt(varName, path)
 		}
 	}
 
@@ -223,8 +238,11 @@ Method BuildAllPaths(pJSON, Output paths As %ArrayOfDataTypes, curPath = "")
 /// match the fields exactly as shown in <property>..Properties</property>, however the validators
 /// specified in <property>..Validators</property> will overwrite the default behaviour
 /// 
-Method ValidateResponse(pMsgHeader As Ens.MessageHeader) As %Status
+Method ValidateResponse(pMsgHeader As Ens.MessageHeader, Output pStorage As %DynamicObject = "") As %Status
 {
+	If (pStorage = "") {
+		Set pStorage = {}
+	}
 	Set pMessage = $CLASSMETHOD(pMsgHeader.MessageBodyClassName, "%OpenId", pMsgHeader.MessageBodyId)
 	If ($CLASSNAME(pMessage) '= ..ClassName) {
 		Throw ##class(%Exception.General).%New("Invalid class","-553",,"Expected response of type '" _ ..ClassName _ "' but actual response was of type '" _ pMsgHeader.MessageBodyClassName _ "'")
@@ -253,6 +271,15 @@ Method ValidateResponse(pMsgHeader As Ens.MessageHeader) As %Status
 		Set vPath = ..Validators.Next(vPath)
 	}
 
+	/// Loop through all storage variables and update the pStorage parameter
+	Set sPath = ..ResultStore.Next("")
+	While sPath '= "" {
+		If ('JSONPaths.IsDefined(sPath)) {
+			Throw ##class(%Exception.General).%New("Storage path '" _ sPath _ "' does not exist", "-331",,"Path specified by 'store' key is NOT a valid path. Please ensure all storage paths lead to an existing path within the JSON response test definition")
+		}
+		Set sPath = ..ResultStore.Next(sPath)
+	}
+
 	/// By this point, all paths specified in the "Validators" key exist
 
 	/// Once all paths have been created, we default to using the EqualsValidator on all paths
@@ -270,6 +297,11 @@ Method ValidateResponse(pMsgHeader As Ens.MessageHeader) As %Status
 		/// the method <method>..ResolveDotPath()</method>
 		Set actualValue = ..ResolveDotPath(path, pMessage)
 		Set validator = ..Validators.GetAt(path)
+
+		If ..ResultStore.IsDefined(path) {
+			/// This path is defined by the result store, update the storage variable
+			Do pStorage.%Set(..ResultStore.GetAt(path), actualValue)
+		}
 
 		/// Run the validator, will throw a validation error if one occurs
 
@@ -304,6 +336,9 @@ Storage Default
 </Value>
 <Value name="5">
 <Value>ExpectedErrorCount</Value>
+</Value>
+<Value name="6">
+<Value>ResultStore</Value>
 </Value>
 </Data>
 <Type>%Storage.Serial</Type>
