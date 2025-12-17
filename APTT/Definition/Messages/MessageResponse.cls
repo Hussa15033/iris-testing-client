@@ -8,7 +8,7 @@
 Class APTT.Definition.Messages.MessageResponse Extends APTT.Definition.Messages.Message
 {
 
-Parameter MESSAGECLASS = "Ens.Response";
+Parameter MESSAGECLASS = "%Persistent";
 
 Property Validators As array Of APTT.Definition.Validators.Base;
 

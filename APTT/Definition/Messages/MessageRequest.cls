@@ -8,7 +8,7 @@ Class APTT.Definition.Messages.MessageRequest Extends APTT.Definition.Messages.M
 {
 
 /// Message classes from the test definition file MUST be a child of Ens.Request
-Parameter MESSAGECLASS = "Ens.Request";
+Parameter MESSAGECLASS = "%Persistent";
 
 Property Fill As %DynamicObject;
 
@@ -105,11 +105,19 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 
 		If ((OSType = value) || (OSType = "")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
 			/// Both the JSON and ObjectScript field are primitive data types, simply set the property value
-			Set $PROPERTY(pObj, key) = value
+			Try {
+				Set $PROPERTY(pObj, key) = value
+			} Catch ex {
+				Throw ##class(%Exception.General).%New("Failed to set property","-18",,"Failed to set the property '" _ key _ "' in request message. Check that this property exists and is not ReadOnly (error = " _ ex.DisplayString() _ ")")
+			}
 		} ElseIf ($CLASSMETHOD(OSType, "%Extends", "%Stream.Object")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
 			/// The ObjectScript property is a Stream and the JSON is a primitive type
 			/// Write the JSON primitive to the stream
-			Set tSC = $METHOD($PROPERTY(pObj, key), "Write", value)
+			Try {
+				Set tSC = $METHOD($PROPERTY(pObj, key), "Write", value)
+			} Catch ex {
+				Throw ##class(%Exception.General).%New("Failed to set stream property","-18",,"Failed to set the property '" _ key _ "' in request message. Check that this property exists and is not ReadOnly (error = " _ ex.DisplayString() _ ")")
+			}
 			Throw:$$$ISERR(tSC) ##class(%Exception.StatusException).ThrowIfInterrupt(tSC)
 		 }ElseIf (CollectionType = "list") {
 			Do ..AssertEquals(jsonType, "array")
