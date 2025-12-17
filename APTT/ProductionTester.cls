@@ -336,6 +336,8 @@ Method VerifyAsyncMessages(pAsyncMessages As %ListOfObjects) As %Status
 						Set messageVerified = 0
 						/// Print for informational purposes
 						Do ..LogColourMessage("---------->Validation failed", "black")
+						/// For debugging purposes:
+						#; Do ..LogColourMessage("------------>"_ex.DisplayString(), "red")
 						Do ..LogColourMessage("-------->Continuing to wait for " _ (endTime - ..GetUnixTimestamp()) _ " seconds..", "blue")
 						Set $LIST(failedHeaderIDs, *+1) = headerID
 					}

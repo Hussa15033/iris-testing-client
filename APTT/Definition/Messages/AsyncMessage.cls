@@ -73,7 +73,7 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 	Return ##class(APTT.Definition.Messages.AsyncMessage).%New()
 }
 
-Method ValidateResponse(pMsgHeader As Ens.MessageHeader) As %Status
+Method ValidateResponse(pMsgHeader As Ens.MessageHeader, ByRef pStorage As %DynamicObject) As %Status
 {
 	If (pMsgHeader.SourceConfigName '= ..Source) {
 		Throw ##class(%Exception.General).%New("Source does not match",,"-30942","Expected async message source to be '" _ ..Source _ "', instead found '" _ pMsgHeader.SourceConfigName _ "'")
@@ -83,7 +83,7 @@ Method ValidateResponse(pMsgHeader As Ens.MessageHeader) As %Status
 		Throw ##class(%Exception.General).%New("Target does not match",,"-30942","Expected async message target to be '" _ ..Target _ "', instead found '" _ pMsgHeader.TargetConfigName _ "'")
 	}
 
-	Return ##super(pMsgHeader)
+	Return ##super(pMsgHeader, .pStorage)
 }
 
 Storage Default

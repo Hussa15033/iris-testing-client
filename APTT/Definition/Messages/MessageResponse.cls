@@ -238,7 +238,7 @@ Method BuildAllPaths(pJSON, Output paths As %ArrayOfDataTypes, curPath = "")
 /// match the fields exactly as shown in <property>..Properties</property>, however the validators
 /// specified in <property>..Validators</property> will overwrite the default behaviour
 /// 
-Method ValidateResponse(pMsgHeader As Ens.MessageHeader, Output pStorage As %DynamicObject = "") As %Status
+Method ValidateResponse(pMsgHeader As Ens.MessageHeader, ByRef pStorage As %DynamicObject = "") As %Status
 {
 	If (pStorage = "") {
 		Set pStorage = {}
@@ -287,6 +287,19 @@ Method ValidateResponse(pMsgHeader As Ens.MessageHeader, Output pStorage As %Dyn
 	Set path = JSONPaths.Next("")
 	While path '= "" {
 		Set expectedValue = JSONPaths.GetAt(path)
+		/// Check if the expected value is a variable (in the format ${<VAR-NAME>})
+		If (($EXTRACT(expectedValue, 1, 2) = "${") && (expectedValue [ "}")) {
+			/// Likely a variable, extract the variable name
+			Set varName = $EXTRACT(expectedValue, 3, *-1)
+			Set mIter = pStorage.%GetIterator()
+
+			If (pStorage.%IsDefined(varName)) {
+				Set varValue = pStorage.%Get(varName)
+				Set expectedValue = varValue
+			} Else {
+				Throw ##class(%Exception.General).%New("Variable does not exist","-3113",,"The variable " _ varName _ " does not exist - response message could not be validated, Path: " _ path)
+			}
+		}
 		If '..Validators.IsDefined(path) {
 			/// If no validator is specified for this path, we use the default validator
 			Set validator = ##class(APTT.Definition.Validators.EqualsValidator).%New("")
@@ -298,6 +311,7 @@ Method ValidateResponse(pMsgHeader As Ens.MessageHeader, Output pStorage As %Dyn
 		Set actualValue = ..ResolveDotPath(path, pMessage)
 		Set validator = ..Validators.GetAt(path)
 
+		/// If we should store the result of this path into storage
 		If ..ResultStore.IsDefined(path) {
 			/// This path is defined by the result store, update the storage variable
 			Do pStorage.%Set(..ResultStore.GetAt(path), actualValue)
