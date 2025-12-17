@@ -103,23 +103,30 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 			}
 		}
 
-		If ((OSType = value) || (OSType = "")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
+		If ($CLASSMETHOD(DataType, "%Extends", "%Stream.Object")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
+			/// The ObjectScript property is a Stream and the JSON is a primitive type
+			/// Write the JSON primitive to the stream
+			Try {
+				If ($METHOD(pObj, "%Extends", "Ens.StreamContainer")) {
+					// The Object is a stream container, NOT a stream, so we need to initialise the stream
+					Set tempStream = ##class(%Stream.GlobalCharacter).%New()
+					Do tempStream.Write(value)
+					Set tSC = pObj.StreamSet(tempStream)
+				} Else {
+					Set tSC = $METHOD($PROPERTY(pObj, key), "Write", value)
+				}
+			} Catch ex {
+				Throw ##class(%Exception.General).%New("Failed to set stream property","-18",,"Failed to set the property '" _ key _ "' in request message. Check that this property exists and is not ReadOnly (error = " _ ex.DisplayString() _ ")")
+			}
+			Throw:$$$ISERR(tSC) ##class(%Exception.StatusException).ThrowIfInterrupt(tSC)
+		 } ElseIf ((OSType = value) || (OSType = "")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
 			/// Both the JSON and ObjectScript field are primitive data types, simply set the property value
 			Try {
 				Set $PROPERTY(pObj, key) = value
 			} Catch ex {
 				Throw ##class(%Exception.General).%New("Failed to set property","-18",,"Failed to set the property '" _ key _ "' in request message. Check that this property exists and is not ReadOnly (error = " _ ex.DisplayString() _ ")")
 			}
-		} ElseIf ($CLASSMETHOD(OSType, "%Extends", "%Stream.Object")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
-			/// The ObjectScript property is a Stream and the JSON is a primitive type
-			/// Write the JSON primitive to the stream
-			Try {
-				Set tSC = $METHOD($PROPERTY(pObj, key), "Write", value)
-			} Catch ex {
-				Throw ##class(%Exception.General).%New("Failed to set stream property","-18",,"Failed to set the property '" _ key _ "' in request message. Check that this property exists and is not ReadOnly (error = " _ ex.DisplayString() _ ")")
-			}
-			Throw:$$$ISERR(tSC) ##class(%Exception.StatusException).ThrowIfInterrupt(tSC)
-		 }ElseIf (CollectionType = "list") {
+		} ElseIf (CollectionType = "list") {
 			Do ..AssertEquals(jsonType, "array")
 
 			/// We are mapping an array in JSON to either a list of primitive data types in ObjectScript
@@ -181,7 +188,7 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 			/// Mismatch or unhandled types between JSON and ObjectScript Object
 			Throw ##class(%Exception.General).%New("Failed to populate message","-313",,"Mismatch of data types - cannot populate message, Key: " _ key _ ", JSON type: " _ jsonType _ " ObjectScript type: " _ OSType _ ", ObjectScript collection: " _ CollectionType _ ", ObjectScript data type: " _ DataType _ ". JSON: " _ value)
 		}
-	}
+}
 }
 
 Storage Default
