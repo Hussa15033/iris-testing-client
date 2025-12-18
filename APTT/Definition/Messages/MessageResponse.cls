@@ -311,12 +311,6 @@ Method ValidateResponse(pMsgHeader As Ens.MessageHeader, ByRef pStorage As %Dyna
 		Set actualValue = ..ResolveDotPath(path, pMessage)
 		Set validator = ..Validators.GetAt(path)
 
-		/// If we should store the result of this path into storage
-		If ..ResultStore.IsDefined(path) {
-			/// This path is defined by the result store, update the storage variable
-			Do pStorage.%Set(..ResultStore.GetAt(path), actualValue)
-		}
-
 		/// Run the validator, will throw a validation error if one occurs
 
 		Try {
@@ -330,6 +324,37 @@ Method ValidateResponse(pMsgHeader As Ens.MessageHeader, ByRef pStorage As %Dyna
 		Set path = JSONPaths.Next(path)
 	}
 
+	/// If validation succeeded, update any storage parameters defined
+	/// in the "store" object in the original JSON. It is important we do this
+	/// AFTER the message has been validated, as there is a chance the message may not be the
+	/// expected message
+
+	/// TODO: Ideally this process needs to be cleaned up, we shouldn't have to specify the path in the
+	/// 	"properties" object if we want to store the field, we should only check the original JSON file for this path
+	/// 	similarly, we shouldn't have to specify the paths in the "properties" field if we want to perform validation,
+	///		instead these values should be inferred from the "store" and "validators" keys implicitly
+	/// e.g. currently we would have to do something like this:
+	///				"store": {
+	///					"prop1": "var1"
+	///				},
+	///				"properties": {
+	///					"prop1": "my-value"
+	///				}
+	/// but it should be enough to only need
+	///				"store": {
+	///					"prop1": "var1"
+	///				}
+	/// and similar for the "validators" property
+	
+	Set path = JSONPaths.Next("")
+	While path '= "" {
+		/// If we should store the result of this path into storage
+		If ..ResultStore.IsDefined(path) {
+			/// This path is defined by the result store, update the storage variable
+			Do pStorage.%Set(..ResultStore.GetAt(path), ..ResolveDotPath(path, pMessage))
+		}
+		Set path = JSONPaths.Next(path)
+	}
 	Quit $$$OK
 }
 
