@@ -68,7 +68,7 @@ Method AssertEquals(pStr1, pStr2, pFailMessage) As %Status [ Private ]
 /// A helper method to populate the properties of an object, given the object, and the corresponding
 /// JSON object, will throw an error if any properties cannot be set
 /// Todo: Move this method to a helper class, along with the reverse method of turning an object to JSON
-Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %DynamicObject) [ Private ]
+Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %DynamicObject)
 {
 	If ('$ISOBJECT(pJSON) || 'pJSON.%Extends("%DynamicObject")) {
 		Throw ##class(%Exception.General).%New("Cannot populate object","-303",,"Cannot populate ObjectScript object of type " _ $CLASSNAME(pObj) _ " as JSON is not a valid %DynamicObject.")
@@ -181,14 +181,21 @@ Method PopulateObjectFromJSON(Output pObj As %RegisteredObject, pJSON As %Dynami
 				Do arr.SetAt(putVal, key1)
 				
 			}
-		} ElseIf ($ISOBJECT($PROPERTY(pObj, key))) {
+		} ElseIf ($CLASSMETHOD(DataType, "%Extends", "%RegisteredObject")) {
 			Set subObj = $PROPERTY(pObj, key)
+			If ('$ISOBJECT(subObj))	 {
+				#; Write "Populating object of type " _ $CLASSNAME(pObj) _ ", property=" _ key _ " of type " _ DataType _ " with value " _ value.%ToJSON(),!,!,!
+				/// If the object has not been instantiated for whatever reason, we create a new object of that type
+				/// and continue the population of the object
+				Set $PROPERTY(pObj, key) = $CLASSMETHOD(DataType, "%New")
+				Set subObj = $CLASSMETHOD(DataType, "%New")
+			}
 			Do ..PopulateObjectFromJSON(.subObj, value)
 		} Else {
 			/// Mismatch or unhandled types between JSON and ObjectScript Object
-			Throw ##class(%Exception.General).%New("Failed to populate message","-313",,"Mismatch of data types - cannot populate message, Key: " _ key _ ", JSON type: " _ jsonType _ " ObjectScript type: " _ OSType _ ", ObjectScript collection: " _ CollectionType _ ", ObjectScript data type: " _ DataType _ ". JSON: " _ value)
+			Throw ##class(%Exception.General).%New("Failed to populate message","-313",,"Mismatch of data types - cannot populate message, Parent class: " _ $CLASSNAME(pObj) _ ", Key: " _ key _ ", JSON type: " _ jsonType _ " ObjectScript type: " _ OSType _ ", ObjectScript collection: " _ CollectionType _ ", ObjectScript data type: " _ DataType _ ". JSON: " _ value.%ToJSON())
 		}
-}
+	}
 }
 
 Storage Default
