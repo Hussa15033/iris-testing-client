@@ -1,13 +1,13 @@
-Class APTT.Example.ValidationTest Extends %RegisteredObject
+Class TestingClient.Example.ValidationTest Extends %RegisteredObject
 {
 
-ClassMethod GenerateRequestMessage() As APTT.Definition.Interaction
+ClassMethod GenerateRequestMessage() As TestingClient.Definition.Interaction
 {
-		Set a = ##class(APTT.Definition.Interaction).%New()
+		Set a = ##class(TestingClient.Definition.Interaction).%New()
 		Do a.%JSONImport(
 			{
                     "request": {
-                        "class": "APTT.Example.Request",
+                        "class": "TestingClient.Example.Request",
                         "properties": {
                             "Name": "OtherUser",
                             "Gender": "M",
@@ -47,7 +47,7 @@ ClassMethod GenerateRequestMessage() As APTT.Definition.Interaction
                         }
                     },
                     "response": {
-                        "class": "APTT.Example.Response",
+                        "class": "TestingClient.Example.Response",
                         "validators": {
                             "Name": {
                                 "validator": "TextValidator",
@@ -102,11 +102,11 @@ ClassMethod GenerateRequestMessage() As APTT.Definition.Interaction
 
 ClassMethod Test()
 {
-	#dim interaction As APTT.Definition.Interaction
+	#dim interaction As TestingClient.Definition.Interaction
 	Set interaction = ..GenerateRequestMessage()
 	Set message = interaction.MessageRequest.GenerateMessageRequest()
 	
-    Set bo = ##class(APTT.Example.Operation).TestCallCM(message, .response)
+    Set bo = ##class(TestingClient.Example.Operation).TestCallCM(message, .response)
     Set sc = interaction.MessageResponse.ValidateResponse(response)
     $$$ThrowOnError(sc)
     zw sc

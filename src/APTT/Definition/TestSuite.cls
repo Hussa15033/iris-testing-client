@@ -6,7 +6,7 @@
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 05.08.2025
 /// 
-Class APTT.Definition.TestSuite Extends (%SerialObject, %JSON.Adaptor)
+Class TestingClient.Definition.TestSuite Extends (%SerialObject, %JSON.Adaptor)
 {
 
 Property SourceFile As %String(%JSONINCLUDE = "none");
@@ -15,7 +15,7 @@ Property TargetProduction As %String(%JSONFIELDNAME = "production");
 
 Property TargetNamespace As %String(%JSONFIELDNAME = "namespace");
 
-Property TestCases As list Of APTT.Definition.TestCase(%JSONFIELDNAME = "tests");
+Property TestCases As list Of TestingClient.Definition.TestCase(%JSONFIELDNAME = "tests");
 
 Storage Default
 {
@@ -34,7 +34,7 @@ Storage Default
 </Value>
 </Data>
 <State>TestSuiteState</State>
-<StreamLocation>^APTT.Definition.TestSuiteS</StreamLocation>
+<StreamLocation>^TestingClient.Definition.TestSuiteS</StreamLocation>
 <Type>%Storage.Serial</Type>
 }
 

@@ -5,16 +5,16 @@
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 05.11.2025
 /// 
-Class APTT.Definition.Interaction Extends (%SerialObject, %JSON.Adaptor)
+Class TestingClient.Definition.Interaction Extends (%SerialObject, %JSON.Adaptor)
 {
 
 Property Name As %String(%JSONFIELDNAME = "name", MAXLEN = "");
 
-Property MessageRequest As APTT.Definition.Messages.MessageRequest(%JSONFIELDNAME = "request");
+Property MessageRequest As TestingClient.Definition.Messages.MessageRequest(%JSONFIELDNAME = "request");
 
-Property MessageResponse As APTT.Definition.Messages.MessageResponse(%JSONFIELDNAME = "response");
+Property MessageResponse As TestingClient.Definition.Messages.MessageResponse(%JSONFIELDNAME = "response");
 
-Property AsyncMessages As list Of APTT.Definition.Messages.AsyncMessage(%JSONFIELDNAME = "asyncmessages");
+Property AsyncMessages As list Of TestingClient.Definition.Messages.AsyncMessage(%JSONFIELDNAME = "asyncmessages");
 
 Storage Default
 {
@@ -33,7 +33,7 @@ Storage Default
 </Value>
 </Data>
 <State>InteractionState</State>
-<StreamLocation>^APTT.Definition.InteractionS</StreamLocation>
+<StreamLocation>^TestingClient.Definition.InteractionS</StreamLocation>
 <Type>%Storage.Serial</Type>
 }
 

@@ -4,7 +4,7 @@
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 18.08.2025
 /// 
-Class APTT.Definition.Validators.TextValidator Extends APTT.Definition.Validators.Base
+Class TestingClient.Definition.Validators.TextValidator Extends TestingClient.Definition.Validators.Base
 {
 
 Parameter VALIDOPTIONS = "equals,contains,beginsWith,endsWith,caseSensitive,notEquals,base64";

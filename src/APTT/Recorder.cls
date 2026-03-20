@@ -4,7 +4,7 @@
 /// 
 /// To use this class:
 /// 1. Run:
-/// 	`Do ##class(APTT.Recorder).Record(<production-class>, <target-component-name>)`
+/// 	`Do ##class(TestingClient.Recorder).Record(<production-class>, <target-component-name>)`
 /// 2. Enter the file path to save the test definition file
 /// 3. Choose whether to record [R] a new test or exit [E]. Exiting will save all tests to the definition file
 /// 4. After recording a test, the test summary will be displayed in the console. Choose whether to Accept [A] or Reject [R] the test
@@ -13,7 +13,7 @@
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 26.10.2025
 /// 
-Class APTT.Recorder Extends %RegisteredObject
+Class TestingClient.Recorder Extends %RegisteredObject
 {
 
 // Todo: Move to UTIL class, DUPLICATE CODE.
@@ -62,7 +62,7 @@ ClassMethod ClassType(pObj As %RegisteredObject)
 
 ClassMethod TestConverter()
 {
-	Set a = ##class(APTT.Example.Request).%New()
+	Set a = ##class(TestingClient.Example.Request).%New()
 	Set a.Name = "Testing"
 	Set a.Age = 183
 	Set a.Gender = "M"
@@ -70,12 +70,12 @@ ClassMethod TestConverter()
 	Do a.FavouriteColours.Insert("Blue")
 	Do a.FavouriteColours.Insert("Red")
 	Do a.FavouriteColours.Insert("Green")
-	Set address1 = ##class(APTT.Example.Model.Address).%New()
+	Set address1 = ##class(TestingClient.Example.Model.Address).%New()
 	Set address1.HouseNumber = 381
 	Do address1.Streets.Insert("FakeStreet 1")
 	Set a.MainAddress = address1
 
-	Set address2 = ##class(APTT.Example.Model.Address).%New()
+	Set address2 = ##class(TestingClient.Example.Model.Address).%New()
 	Set address2.HouseNumber = 34
 	Do address2.Streets.Insert("FakeStreet2 For OtherAddress")
 	Do a.OtherAddresses.Insert(address1)

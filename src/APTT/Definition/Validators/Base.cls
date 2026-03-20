@@ -8,7 +8,7 @@
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 04.08.2025
 /// 
-Class APTT.Definition.Validators.Base Extends (%RegisteredObject, %SerialObject) [ Abstract ]
+Class TestingClient.Definition.Validators.Base Extends (%RegisteredObject, %SerialObject) [ Abstract ]
 {
 
 /// A comma separated list of valid options this validator takes, override in your subclass

@@ -1,4 +1,4 @@
-Class APTT.Example.Response Extends Ens.Response
+Class TestingClient.Example.Response Extends Ens.Response
 {
 
 Property Name As %String;
@@ -11,23 +11,23 @@ Property ContactNumbers As array Of %Integer;
 
 Property FavouriteColours As list Of %String;
 
-Property MainAddress As APTT.Example.Model.Address;
+Property MainAddress As TestingClient.Example.Model.Address;
 
-Property OtherAddresses As list Of APTT.Example.Model.Address;
+Property OtherAddresses As list Of TestingClient.Example.Model.Address;
 
-Property NamedAddresses As array Of APTT.Example.Model.Address;
+Property NamedAddresses As array Of TestingClient.Example.Model.Address;
 
 Storage Default
 {
 <Data name="ContactNumbers">
 <Attribute>ContactNumbers</Attribute>
 <Structure>subnode</Structure>
-<Subscript>"APTT.Example.Response.ContactNumbers"</Subscript>
+<Subscript>"TestingClient.Example.Response.ContactNumbers"</Subscript>
 </Data>
 <Data name="NamedAddresses">
 <Attribute>NamedAddresses</Attribute>
 <Structure>subnode</Structure>
-<Subscript>"APTT.Example.Response.NamedAddresses"</Subscript>
+<Subscript>"TestingClient.Example.Response.NamedAddresses"</Subscript>
 </Data>
 <Data name="ResponseDefaultData">
 <Subscript>"Response"</Subscript>

@@ -4,7 +4,7 @@
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 05.08.2025
 /// 
-Class APTT.Definition.Messages.Message Extends %SerialObject [ Abstract ]
+Class TestingClient.Definition.Messages.Message Extends %SerialObject [ Abstract ]
 {
 
 /// The type of message this is, should be either Ens.Request or Ens.Response
@@ -82,7 +82,7 @@ Storage Default
 </Value>
 </Data>
 <State>MessageState</State>
-<StreamLocation>^APTT.Definition.MeA057.MessageS</StreamLocation>
+<StreamLocation>^TestingClient.Definition.MeA057.MessageS</StreamLocation>
 <Type>%Storage.Serial</Type>
 }
 

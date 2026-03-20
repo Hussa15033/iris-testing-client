@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Export generator="IRIS" version="26" zv="IRIS for Windows (x86-64) 2024.3.1 (Build 228U)" ts="2026-03-20 11:27:21">
-<Class name="APTT.Definition.Interaction">
+<Class name="TestingClient.Definition.Interaction">
 <Description>
 
 Represents an interaction, which is a Request/Response message pair going into a component. The AsyncMessages can be used to
@@ -20,17 +20,17 @@ test for asynchronous messages after the interaction occurs.
 </Property>
 
 <Property name="MessageRequest">
-<Type>APTT.Definition.Messages.MessageRequest</Type>
+<Type>TestingClient.Definition.Messages.MessageRequest</Type>
 <Parameter name="%JSONFIELDNAME" value="request"/>
 </Property>
 
 <Property name="MessageResponse">
-<Type>APTT.Definition.Messages.MessageResponse</Type>
+<Type>TestingClient.Definition.Messages.MessageResponse</Type>
 <Parameter name="%JSONFIELDNAME" value="response"/>
 </Property>
 
 <Property name="AsyncMessages">
-<Type>APTT.Definition.Messages.AsyncMessage</Type>
+<Type>TestingClient.Definition.Messages.AsyncMessage</Type>
 <Collection>list</Collection>
 <Parameter name="%JSONFIELDNAME" value="asyncmessages"/>
 </Property>
@@ -38,7 +38,7 @@ test for asynchronous messages after the interaction occurs.
 <Storage name="Default">
 <Type>%Storage.Serial</Type>
 <State>InteractionState</State>
-<StreamLocation>^APTT.Definition.InteractionS</StreamLocation>
+<StreamLocation>^TestingClient.Definition.InteractionS</StreamLocation>
 <Data name="InteractionState">
 <Value name="1">
 <Value>MessageRequest</Value>
@@ -57,7 +57,7 @@ test for asynchronous messages after the interaction occurs.
 </Class>
 
 
-<Class name="APTT.Definition.Messages.AsyncMessage">
+<Class name="TestingClient.Definition.Messages.AsyncMessage">
 <Description>
 
 Message class responsible for parsing Asynchronous messages.
@@ -67,7 +67,7 @@ These messages include a timeout and are expected to be in response to an intera
 @author Auwais Hussain (ahussain@intersystems.com)
 @version 05.11.2025
 </Description>
-<Super>APTT.Definition.Messages.MessageResponse</Super>
+<Super>TestingClient.Definition.Messages.MessageResponse</Super>
 <TimeChanged>67649,41191.8334255</TimeChanged>
 <TimeCreated>67649,41191.8334255</TimeCreated>
 
@@ -112,7 +112,7 @@ These messages include a timeout and are expected to be in response to an intera
 
 	If (pParent.AsyncMessages.Size > 0) {
 		/// We have already inserted all elements from the JSON into this object, return a dud object
-		Return ##class(APTT.Definition.Messages.AsyncMessage).%New()
+		Return ##class(TestingClient.Definition.Messages.AsyncMessage).%New()
 	}
 
 	Set iter = asyncMessages.%GetIterator()
@@ -137,7 +137,7 @@ These messages include a timeout and are expected to be in response to an intera
 		Set tempObj.response = asyncMessage
 
 		/// Create an instance of Async Messages
-		#dim instance As APTT.Definition.Messages.AsyncMessage
+		#dim instance As TestingClient.Definition.Messages.AsyncMessage
 		Set instance = ##super(tempObj, pParent)
 		Set instance.Timeout = jTimeout
 		Set instance.Source = jSource
@@ -149,7 +149,7 @@ These messages include a timeout and are expected to be in response to an intera
 	}
 
 	/// Redundant return
-	Return ##class(APTT.Definition.Messages.AsyncMessage).%New()
+	Return ##class(TestingClient.Definition.Messages.AsyncMessage).%New()
 ]]></Implementation>
 </Method>
 
@@ -210,7 +210,7 @@ These messages include a timeout and are expected to be in response to an intera
 </Class>
 
 
-<Class name="APTT.Definition.Messages.Message">
+<Class name="TestingClient.Definition.Messages.Message">
 <Description>
 
 Abstract message class used to encapsulate request and response messages
@@ -309,7 +309,7 @@ to pass the correct JSON object from the parent</p>
 <Storage name="Default">
 <Type>%Storage.Serial</Type>
 <State>MessageState</State>
-<StreamLocation>^APTT.Definition.MeA057.MessageS</StreamLocation>
+<StreamLocation>^TestingClient.Definition.MeA057.MessageS</StreamLocation>
 <Data name="MessageState">
 <Value name="1">
 <Value>ClassName</Value>
@@ -322,7 +322,7 @@ to pass the correct JSON object from the parent</p>
 </Class>
 
 
-<Class name="APTT.Definition.Messages.MessageRequest">
+<Class name="TestingClient.Definition.Messages.MessageRequest">
 <Description>
 
 The message request class which parses request messages from the test definition file
@@ -330,7 +330,7 @@ The message request class which parses request messages from the test definition
 @author Auwais Hussain (ahussain@intersystems.com)
 @version 05.08.2025
 </Description>
-<Super>APTT.Definition.Messages.Message</Super>
+<Super>TestingClient.Definition.Messages.Message</Super>
 <TimeChanged>67649,41191.9471265</TimeChanged>
 <TimeCreated>67649,41191.9471265</TimeCreated>
 
@@ -563,7 +563,7 @@ Todo: Move this method to a helper class, along with the reverse method of turni
 </Class>
 
 
-<Class name="APTT.Definition.Messages.MessageResponse">
+<Class name="TestingClient.Definition.Messages.MessageResponse">
 <Description>
 
 The message response class for holding validators and response message
@@ -572,7 +572,7 @@ definitions from the test definition file
 @author Auwais Hussain (ahussain@intersystems.com)
 @version 05.08.2025
 </Description>
-<Super>APTT.Definition.Messages.Message</Super>
+<Super>TestingClient.Definition.Messages.Message</Super>
 <TimeChanged>67649,41191.8969761</TimeChanged>
 <TimeCreated>67649,41191.8969761</TimeCreated>
 
@@ -581,7 +581,7 @@ definitions from the test definition file
 </Parameter>
 
 <Property name="Validators">
-<Type>APTT.Definition.Validators.Base</Type>
+<Type>TestingClient.Definition.Validators.Base</Type>
 <Collection>array</Collection>
 </Property>
 
@@ -629,7 +629,7 @@ Ensure the "response" field is the %JSONFIELDNAME of Interaction.MessageRequest<
 		/// options
 		While (iter.%GetNext(.key, .value, .type)) {
 			Set fieldName = key
-			Set validatorClass = "APTT.Definition.Validators." _ value.validator
+			Set validatorClass = "TestingClient.Definition.Validators." _ value.validator
 			Set validatorOptions = value.options
 
 			Try {
@@ -898,7 +898,7 @@ specified in <property>..Validators</property> will overwrite the default behavi
 		}
 		If '..Validators.IsDefined(path) {
 			/// If no validator is specified for this path, we use the default validator
-			Set validator = ##class(APTT.Definition.Validators.EqualsValidator).%New("")
+			Set validator = ##class(TestingClient.Definition.Validators.EqualsValidator).%New("")
 			Do ..Validators.SetAt(validator, path)
 		}
 
@@ -981,7 +981,7 @@ specified in <property>..Validators</property> will overwrite the default behavi
 </Class>
 
 
-<Class name="APTT.Definition.TestCase">
+<Class name="TestingClient.Definition.TestCase">
 <Description>
 
 A test case is targeted at a single component within the production. It takes a list of interactions which are sent to the component
@@ -1011,7 +1011,7 @@ and the responses compared/validated
 </Property>
 
 <Property name="Interactions">
-<Type>APTT.Definition.Interaction</Type>
+<Type>TestingClient.Definition.Interaction</Type>
 <Collection>list</Collection>
 <Parameter name="%JSONFIELDNAME" value="interactions"/>
 </Property>
@@ -1019,7 +1019,7 @@ and the responses compared/validated
 <Storage name="Default">
 <Type>%Storage.Serial</Type>
 <State>TestCaseState</State>
-<StreamLocation>^APTT.Definition.TestCaseS</StreamLocation>
+<StreamLocation>^TestingClient.Definition.TestCaseS</StreamLocation>
 <Data name="TestCaseState">
 <Value name="1">
 <Value>TargetHostName</Value>
@@ -1035,7 +1035,7 @@ and the responses compared/validated
 </Class>
 
 
-<Class name="APTT.Definition.TestSuite">
+<Class name="TestingClient.Definition.TestSuite">
 <Description>
 
 A test suite is the foundation of a test definition file. It takes in a list of test cases aimed at various
@@ -1065,7 +1065,7 @@ testing 1 component.
 </Property>
 
 <Property name="TestCases">
-<Type>APTT.Definition.TestCase</Type>
+<Type>TestingClient.Definition.TestCase</Type>
 <Collection>list</Collection>
 <Parameter name="%JSONFIELDNAME" value="tests"/>
 </Property>
@@ -1073,7 +1073,7 @@ testing 1 component.
 <Storage name="Default">
 <Type>%Storage.Serial</Type>
 <State>TestSuiteState</State>
-<StreamLocation>^APTT.Definition.TestSuiteS</StreamLocation>
+<StreamLocation>^TestingClient.Definition.TestSuiteS</StreamLocation>
 <Data name="TestSuiteState">
 <Value name="1">
 <Value>SourceFile</Value>
@@ -1092,7 +1092,7 @@ testing 1 component.
 </Class>
 
 
-<Class name="APTT.Definition.Validators.Base">
+<Class name="TestingClient.Definition.Validators.Base">
 <Description>
 
 Base validator class
@@ -1196,7 +1196,7 @@ Options methods</Description>
 </Class>
 
 
-<Class name="APTT.Definition.Validators.EqualsValidator">
+<Class name="TestingClient.Definition.Validators.EqualsValidator">
 <Description>
 
 The default and most basic validator.
@@ -1206,7 +1206,7 @@ It checks to ensure the expected value and the actual value match, no options ar
 @author Auwais Hussain (ahussain@intersystems.com)
 @version 01.08.2025
 </Description>
-<Super>APTT.Definition.Validators.Base</Super>
+<Super>TestingClient.Definition.Validators.Base</Super>
 <TimeChanged>67649,41191.8797251</TimeChanged>
 <TimeCreated>67649,41191.8797251</TimeCreated>
 
@@ -1224,7 +1224,7 @@ It checks to ensure the expected value and the actual value match, no options ar
 </Class>
 
 
-<Class name="APTT.Definition.Validators.TextValidator">
+<Class name="TestingClient.Definition.Validators.TextValidator">
 <Description>
 
 A validator for TextFields. This validator takes various options to perform different text validations. Each option adds to the validation checks.
@@ -1232,7 +1232,7 @@ A validator for TextFields. This validator takes various options to perform diff
 @author Auwais Hussain (ahussain@intersystems.com)
 @version 18.08.2025
 </Description>
-<Super>APTT.Definition.Validators.Base</Super>
+<Super>TestingClient.Definition.Validators.Base</Super>
 <TimeChanged>67649,41191.8927946</TimeChanged>
 <TimeCreated>67649,41191.8927946</TimeCreated>
 
@@ -1323,7 +1323,7 @@ Can specify any combination of the above and they will all be checked
 </Class>
 
 
-<Class name="APTT.Parser">
+<Class name="TestingClient.Parser">
 <Description>
 
 A Parser utility for loading test definition .JSON files
@@ -1341,7 +1341,7 @@ Parses a file using the test definition JSON model
 </Description>
 <ClassMethod>1</ClassMethod>
 <FormalSpec>pFilepath:%String</FormalSpec>
-<ReturnType>APTT.Definition.TestSuite</ReturnType>
+<ReturnType>TestingClient.Definition.TestSuite</ReturnType>
 <Implementation><![CDATA[
 	If ('##class(%File).Exists(pFilepath)) {
 		Throw ##class(%Exception.General).%New("File does not exist",2,,"The test definition file '" _ pFilepath _ "' does not exist")
@@ -1361,7 +1361,7 @@ Parses a file using the test definition JSON model
 
 	Do file.Close()
 
-	Set testSuite = ##class(APTT.Definition.TestSuite).%New()
+	Set testSuite = ##class(TestingClient.Definition.TestSuite).%New()
 	Set testSuite.SourceFile = pFilepath
 	Set tSC = testSuite.%JSONImport(data)
 	$$$ThrowOnError(tSC)
@@ -1372,12 +1372,12 @@ Parses a file using the test definition JSON model
 </Class>
 
 
-<Class name="APTT.ProductionTester">
+<Class name="TestingClient.ProductionTester">
 <Description><![CDATA[
 
 Auwais's Production Testing Tool
 
-The main entry point for the APTT utility
+The main entry point for the TestingClient utility
 
 This class is the main class that enables testing of the production. It will load all of your
 test definition files and play back the interactions stored within the JSON file
@@ -1388,7 +1388,7 @@ extend your request or response messages from the %JSON.Adaptor class
 To run this tester:
 	- Create a directory with all of your test definition files
 	- Run with
-		Do ##class(APTT.ProductionTester).Run("/path/to/your/test/definitions/directory", "<your production name>")
+		Do ##class(TestingClient.ProductionTester).Run("/path/to/your/test/definitions/directory", "<your production name>")
 
 @author Auwais Hussain (ahussain@intersystems.com)
 @version 0.6
@@ -1411,7 +1411,7 @@ We want to perform custom error handling for production errors</Description>
 </Parameter>
 
 <Property name="Suites">
-<Type>APTT.Definition.TestSuite</Type>
+<Type>TestingClient.Definition.TestSuite</Type>
 <Collection>list</Collection>
 </Property>
 
@@ -1476,22 +1476,22 @@ supported colours:
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	/// Tool specific globals
-	Kill ^APTT
-	Set ^APTT.TestDefinitionDirectory = pFileDirectory
-	Set ^APTT.Runtime = $ZDT($H)
-	Set ^APTT.ExpectTests = pExpectTests
-	Set ^APTT.Success = 0
-	Set ^APTT.TotalTests = 0
-	Set ^APTT.TestsPassed = 0
-	Set ^APTT.TestsRan = 0
-	Set ^APTT.ExpectedErrors = 0
-	Set ^APTT.AccountedErrors = 0
+	Kill ^TestingClient
+	Set ^TestingClient.TestDefinitionDirectory = pFileDirectory
+	Set ^TestingClient.Runtime = $ZDT($H)
+	Set ^TestingClient.ExpectTests = pExpectTests
+	Set ^TestingClient.Success = 0
+	Set ^TestingClient.TotalTests = 0
+	Set ^TestingClient.TestsPassed = 0
+	Set ^TestingClient.TestsRan = 0
+	Set ^TestingClient.ExpectedErrors = 0
+	Set ^TestingClient.AccountedErrors = 0
 
 	Set dir = ##class(%File).%New(pFileDirectory)
 	If ('##class(%File).DirectoryExists(pFileDirectory)) {
 		Write "[ERROR]: " _ "Directory '" _ pFileDirectory _ "' does not exist.. exiting"
-		Write:pExitOSProcess=1 !,"Exiting with process code "_^APTT.Success
-		Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
+		Write:pExitOSProcess=1 !,"Exiting with process code "_^TestingClient.Success
+		Do:pExitOSProcess=1 $System.Process.Terminate(,^TestingClient.Success)
 		Return $System.Status.Error("InitFailed", "Specified directory '" _ pFileDirectory _ "' does not exist")
 	}
 
@@ -1508,16 +1508,16 @@ supported colours:
 	Set tSC = ##super()
 	
 	Write !,"----- Summary -----",!
-	Write "- Total tests: " _ ^APTT.TotalTests,!
-	Write "- Tests ran: " _ ^APTT.TestsRan,!
+	Write "- Total tests: " _ ^TestingClient.TotalTests,!
+	Write "- Tests ran: " _ ^TestingClient.TestsRan,!
 	
 	Set percentPassed = 0
-	Set:^APTT.TestsRan>0 percentPassed = $NUMBER(((^APTT.TestsPassed / ^APTT.TotalTests) * 100), 0)
-	Write "- Tests passed: " _ ^APTT.TestsPassed _ " / " _ ^APTT.TotalTests _ "(" _ percentPassed _ "%)",!
-	Write "- Errors Accounted For: " _ ^APTT.AccountedErrors _ " / " _ ^APTT.ExpectedErrors,!
+	Set:^TestingClient.TestsRan>0 percentPassed = $NUMBER(((^TestingClient.TestsPassed / ^TestingClient.TotalTests) * 100), 0)
+	Write "- Tests passed: " _ ^TestingClient.TestsPassed _ " / " _ ^TestingClient.TotalTests _ "(" _ percentPassed _ "%)",!
+	Write "- Errors Accounted For: " _ ^TestingClient.AccountedErrors _ " / " _ ^TestingClient.ExpectedErrors,!
 
-	Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
-	If ($GET(^APTT.Success, "") = 1) {
+	Do:pExitOSProcess=1 $System.Process.Terminate(,^TestingClient.Success)
+	If ($GET(^TestingClient.Success, "") = 1) {
 		Return $$$OK
 	} Else {
 		Return ..Error("Tests were not successful")
@@ -1528,7 +1528,7 @@ supported colours:
 <Method name="OnBeforeProductionStart">
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	Set testDefinitionDirectory = $GET(^APTT.TestDefinitionDirectory, "")
+	Set testDefinitionDirectory = $GET(^TestingClient.TestDefinitionDirectory, "")
 	If (testDefinitionDirectory = "") {
 		Do $$$AssertFailure("No test definition directory was specified")
 	}
@@ -1573,18 +1573,18 @@ supported colours:
 <Method name="OnAfterProductionStop">
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	Do ..LogColourMessage("Total of " _ ^APTT.TestsPassed _ "/" _ ^APTT.TotalTests _ " tests were successful out of " _ ^APTT.TestsRan _ " tests ran", "blue")
+	Do ..LogColourMessage("Total of " _ ^TestingClient.TestsPassed _ "/" _ ^TestingClient.TotalTests _ " tests were successful out of " _ ^TestingClient.TestsRan _ " tests ran", "blue")
 
-	Do $$$AssertEquals(^APTT.TestsPassed, ^APTT.TotalTests)
-	Do $$$AssertEquals(^APTT.TestsRan, ^APTT.TotalTests)
+	Do $$$AssertEquals(^TestingClient.TestsPassed, ^TestingClient.TotalTests)
+	Do $$$AssertEquals(^TestingClient.TestsRan, ^TestingClient.TotalTests)
 	
-	If ((^APTT.TestsPassed = ^APTT.TotalTests) && (^APTT.TestsRan = ^APTT.TotalTests)) {
-		/// Check all tests passed and all tests ran before setting the ^APTT.Success global, as this global is the
+	If ((^TestingClient.TestsPassed = ^TestingClient.TotalTests) && (^TestingClient.TestsRan = ^TestingClient.TotalTests)) {
+		/// Check all tests passed and all tests ran before setting the ^TestingClient.Success global, as this global is the
 		/// most important global which dictates whether the tests passed or not
 		Do ..LogColourMessage("All tests ran and were successful", "green")
-		Set ^APTT.Success = 1
+		Set ^TestingClient.Success = 1
 	} Else {
-		Set ^APTT.Success = 0
+		Set ^TestingClient.Success = 0
 	}
 
 	Write ..Storage.%ToJSON()
@@ -1618,7 +1618,7 @@ These files MUST end in ".json" to be picked up by this test utility
 			Set path = ##class(%File).NormalizeFilename(rSet.%Get("Name"))
 			Set filename = ##class(%File).GetFilename(path)
 			Do ..LogColourMessage("---->Loading " _ filename _ "...", "blue")
-			Set testSuite = ##class(APTT.Parser).LoadFileAsTestSuite(path)
+			Set testSuite = ##class(TestingClient.Parser).LoadFileAsTestSuite(path)
 
 			Do ..LogColourMessage("------>Loaded", "green")
 
@@ -1632,7 +1632,7 @@ These files MUST end in ".json" to be picked up by this test utility
 			/// Count how many test cases there are
 			Set tKey = testSuite.TestCases.Next("")
 			While tKey '= "" {
-				Do $I(^APTT.TotalTests, testSuite.TestCases.GetAt(tKey).Interactions.Size)
+				Do $I(^TestingClient.TotalTests, testSuite.TestCases.GetAt(tKey).Interactions.Size)
 				Set tKey = testSuite.TestCases.Next(tKey)
 			}
 		} Catch ex {
@@ -1643,10 +1643,10 @@ These files MUST end in ".json" to be picked up by this test utility
 	
 	If ..Suites.Size = 0 {
 		Do ..LogMessage("-->No test suites found")
-		Return:^APTT.ExpectTests=1 ..Error("Tests were expected, however none were loaded")
+		Return:^TestingClient.ExpectTests=1 ..Error("Tests were expected, however none were loaded")
 	} Else {
 		Do ..LogColourMessage("-->" _ ..Suites.Size _ " test suites loaded", "blue")
-		Do ..LogColourMessage("-->Identified " _ ^APTT.TotalTests _ " tests to run", "blue")
+		Do ..LogColourMessage("-->Identified " _ ^TestingClient.TotalTests _ " tests to run", "blue")
 	}
 
 	Return $$$OK
@@ -1715,7 +1715,7 @@ These files MUST end in ".json" to be picked up by this test utility
 	Set ..CheckedBaseMessageHeaderID = ..GetLastMessageHeaderID()
 	Set baseMessageHeaderID = ..CheckedBaseMessageHeaderID
 	For i=1:1:pAsyncMessages.Size {
-		#dim asyncMessage As APTT.Definition.Messages.AsyncMessage
+		#dim asyncMessage As TestingClient.Definition.Messages.AsyncMessage
 		Set asyncMessage = pAsyncMessages.GetAt(i)
 		
 		If (asyncMessage.Source = "") || (asyncMessage.Target = "") {
@@ -1801,7 +1801,7 @@ These files MUST end in ".json" to be picked up by this test utility
 </Method>
 
 <Method name="RunOneTestSuite">
-<FormalSpec>pTestSuite:APTT.Definition.TestSuite</FormalSpec>
+<FormalSpec>pTestSuite:TestingClient.Definition.TestSuite</FormalSpec>
 <Private>1</Private>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
@@ -1813,7 +1813,7 @@ These files MUST end in ".json" to be picked up by this test utility
 	/// Attempt to run all messages within this production
 	Set tc = pTestSuite
 	For i=1:1:pTestSuite.TestCases.Size {
-		#dim testCase As APTT.Definition.TestCase
+		#dim testCase As TestingClient.Definition.TestCase
 		Set testCase = pTestSuite.TestCases.GetAt(i)
 		
 		Set targetHostName = testCase.TargetHostName
@@ -1851,7 +1851,7 @@ These files MUST end in ".json" to be picked up by this test utility
 		Set interactions = testCase.Interactions
 
 		For j=1:1:testCase.Interactions.Size {
-			#dim interaction As APTT.Definition.Interaction
+			#dim interaction As TestingClient.Definition.Interaction
 			Set interaction = testCase.Interactions.GetAt(j)
 
 			If (interaction.Name '= "") {
@@ -1859,7 +1859,7 @@ These files MUST end in ".json" to be picked up by this test utility
 			} Else {
 				Do ..LogColourMessage("---->Running interaction with index " _ j, "blue")
 			}
-			Do $I(^APTT.TestsRan, 1)
+			Do $I(^TestingClient.TestsRan, 1)
 
 			/// Generate the Ens.Request message we will be sending into the
 			/// production
@@ -1906,7 +1906,7 @@ These files MUST end in ".json" to be picked up by this test utility
 				$$$ThrowOnError(asyncSC)
 				Do $$$AssertStatusOK(asyncSC)
 
-				Do:$$$ISOK(validationSC)&&$$$ISOK(asyncSC) $I(^APTT.TestsPassed, 1)
+				Do:$$$ISOK(validationSC)&&$$$ISOK(asyncSC) $I(^TestingClient.TestsPassed, 1)
 			} Catch ex {
 				Set interactionName = "Interaction index " _ j
 				Set:interaction.Name'="" interactionName = interaction.Name
@@ -1925,7 +1925,7 @@ These files MUST end in ".json" to be picked up by this test utility
 <Description>
 This method checks the errors since the last check to ensure the errors
 that were expected from this interaction are accounted for</Description>
-<FormalSpec>pInteraction:APTT.Definition.Interaction</FormalSpec>
+<FormalSpec>pInteraction:TestingClient.Definition.Interaction</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	Write "Checking interaction errors.."
@@ -1938,7 +1938,7 @@ that were expected from this interaction are accounted for</Description>
 	Set expectedErrCnt = pInteraction.MessageResponse.ExpectedErrorCount
 	Set expectedErrList = pInteraction.MessageResponse.ExpectedErrors
 
-	Do $I(^APTT.ExpectedErrors, expectedErrCnt)
+	Do $I(^TestingClient.ExpectedErrors, expectedErrCnt)
 
 	Do ..GetEventLog("error","",..CheckedBaseLogID, .Errs, .n)
 
@@ -1960,12 +1960,12 @@ that were expected from this interaction are accounted for</Description>
 				Do ..LogColourMessage("Expected production error to contain text '" _ expectedErr _ "' but actual error is '" _ errText _ "'", "red")
 				Set tSC = $System.Status.Error(5001, ..ColourText("One or more production errors could not be validated -- Please see above", "red"))
 			} Else {
-				Do $I(^APTT.AccountedErrors, 1)
+				Do $I(^TestingClient.AccountedErrors, 1)
 				Do ..LogColourMessage("Error " _ i _ " is an expected error and contains the specified text", "green")
 			}
 		} Else {
 			Do ..LogMessage("[" _ configName _ "]: Error occurred - " _ errText)
-			Do $I(^APTT.AccountedErrors, 1)
+			Do $I(^TestingClient.AccountedErrors, 1)
 		}
 	}
 
@@ -1983,14 +1983,14 @@ that were expected from this interaction are accounted for</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	// Automatically check errors
-	Do $$$AssertEquals(^APTT.AccountedErrors, ^APTT.ExpectedErrors)
+	Do $$$AssertEquals(^TestingClient.AccountedErrors, ^TestingClient.ExpectedErrors)
 	Do ..GetEventLog("error","", ..BaseLogId,,.TotalErrors)
 
-	If (^APTT.AccountedErrors'=^APTT.ExpectedErrors)||(^APTT.AccountedErrors'=TotalErrors) {
+	If (^TestingClient.AccountedErrors'=^TestingClient.ExpectedErrors)||(^TestingClient.AccountedErrors'=TotalErrors) {
 		/// There were unaccounted errors within the production
-		Set msg = "Not all errors have been accounted for. Expected " _ ^APTT.ExpectedErrors _ " errors but actually accounted for " _ ^APTT.AccountedErrors _ " errors, there were " _ TotalErrors _ " errors that occurred in total."
+		Set msg = "Not all errors have been accounted for. Expected " _ ^TestingClient.ExpectedErrors _ " errors but actually accounted for " _ ^TestingClient.AccountedErrors _ " errors, there were " _ TotalErrors _ " errors that occurred in total."
 		Do ..LogErrors(..Error(..ColourText(msg, "red")))
-		Set ^APTT.Success = 0
+		Set ^TestingClient.Success = 0
 		Quit $System.Status.Error(5001, msg)
 	}
 	Quit $$$OK
@@ -1999,7 +1999,7 @@ that were expected from this interaction are accounted for</Description>
 </Class>
 
 
-<Class name="APTT.Recorder">
+<Class name="TestingClient.Recorder">
 <Description><![CDATA[
 
 This class can be used to record test messages and automatically create a 
@@ -2007,7 +2007,7 @@ JSON test definition file that can be modified to replay the tests that have bee
 
 To use this class:
 1. Run:
-	`Do ##class(APTT.Recorder).Record(<production-class>, <target-component-name>)`
+	`Do ##class(TestingClient.Recorder).Record(<production-class>, <target-component-name>)`
 2. Enter the file path to save the test definition file
 3. Choose whether to record [R] a new test or exit [E]. Exiting will save all tests to the definition file
 4. After recording a test, the test summary will be displayed in the console. Choose whether to Accept [A] or Reject [R] the test
@@ -2084,7 +2084,7 @@ Returns either "primitive", "list", "array", "object" or "json"</Description>
 <Method name="TestConverter">
 <ClassMethod>1</ClassMethod>
 <Implementation><![CDATA[
-	Set a = ##class(APTT.Example.Request).%New()
+	Set a = ##class(TestingClient.Example.Request).%New()
 	Set a.Name = "Testing"
 	Set a.Age = 183
 	Set a.Gender = "M"
@@ -2092,12 +2092,12 @@ Returns either "primitive", "list", "array", "object" or "json"</Description>
 	Do a.FavouriteColours.Insert("Blue")
 	Do a.FavouriteColours.Insert("Red")
 	Do a.FavouriteColours.Insert("Green")
-	Set address1 = ##class(APTT.Example.Model.Address).%New()
+	Set address1 = ##class(TestingClient.Example.Model.Address).%New()
 	Set address1.HouseNumber = 381
 	Do address1.Streets.Insert("FakeStreet 1")
 	Set a.MainAddress = address1
 
-	Set address2 = ##class(APTT.Example.Model.Address).%New()
+	Set address2 = ##class(TestingClient.Example.Model.Address).%New()
 	Set address2.HouseNumber = 34
 	Do address2.Streets.Insert("FakeStreet2 For OtherAddress")
 	Do a.OtherAddresses.Insert(address1)

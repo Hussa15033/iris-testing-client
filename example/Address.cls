@@ -1,4 +1,4 @@
-Class APTT.Example.Model.Address Extends (%SerialObject, %XML.Adaptor)
+Class TestingClient.Example.Model.Address Extends (%SerialObject, %XML.Adaptor)
 {
 
 Property HouseNumber As %Integer;
@@ -16,7 +16,7 @@ Storage Default
 </Value>
 </Data>
 <State>AddressState</State>
-<StreamLocation>^APTT.Example.Model.AddressS</StreamLocation>
+<StreamLocation>^TestingClient.Example.Model.AddressS</StreamLocation>
 <Type>%Storage.Serial</Type>
 }
 

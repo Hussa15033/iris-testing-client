@@ -22,7 +22,7 @@ Install the project by importing the `dist/latest.xml` file into IRIS:
 Once the testing client has been imported, record tests by entering the following commands:
 ```objectscript
 USER>zn "<your-namespace>"
-USER>Do ##class(APTT.Recorder).Record()
+USER>Do ##class(TestingClient.Recorder).Record()
 ```
 
 Where `<your-namespace>` is the namespace into which the testing client was imported and in which your production resides
@@ -49,10 +49,10 @@ Go back to the terminal. Your request message and response will be picked up by 
 You can record as many tests as needed. When you have finished testing, enter `E` to exit the tool. The tests will be saved to the file you specified. If the file fails to save, the tool will output the raw JSON text to the terminal for you to copy and paste.
 
 ### Running tests
-Run tests via the `APTT.ProductionTester` class in the following way:
+Run tests via the `TestingClient.ProductionTester` class in the following way:
 ```objectscript
 USER>zn "<your-namespace>"
-USER>Do ##class(APTT.ProductionTester).Run("<test-directory>", "<production-class>")
+USER>Do ##class(TestingClient.ProductionTester).Run("<test-directory>", "<production-class>")
 ```
 
 **\<your-namespace\>**: The namespace the testing tool has been imported into\
@@ -63,31 +63,31 @@ USER>Do ##class(APTT.ProductionTester).Run("<test-directory>", "<production-clas
 
 After running the tests, the following globals are set and can be used to read the statistics from the last test run:
 ```
-^APTT.TestDefinitionDirectory		/// The test definition directory
-^APTT.Runtime						/// The date/time of the run
-^APTT.ExpectTests 					/// Whether tests were expected in the run
-^APTT.Success						/// Whether the last run was successful
-^APTT.TotalTests					/// The total number of tests that were loaded
-^APTT.TestsPassed					/// The total number of tests that passed
-^APTT.TestsRan						/// The total number of tests that actually ran
+^TestingClient.TestDefinitionDirectory		/// The test definition directory
+^TestingClient.Runtime						/// The date/time of the run
+^TestingClient.ExpectTests 					/// Whether tests were expected in the run
+^TestingClient.Success						/// Whether the last run was successful
+^TestingClient.TotalTests					/// The total number of tests that were loaded
+^TestingClient.TestsPassed					/// The total number of tests that passed
+^TestingClient.TestsRan						/// The total number of tests that actually ran
 ```
 
 For example, to write whether the last run was successful to the terminal:
 ```objectscript
-USER>Write ^APTT.Success
+USER>Write ^TestingClient.Success
 ```
 
 ### Using as part of a CI/CD process
-The testing tool can be used as part of an automated testing job in a CI/CD pipeline. When you have finished running tests, the `^APTT.Success` variable stores a boolean value indicating whether the tests were successful or not.
+The testing tool can be used as part of an automated testing job in a CI/CD pipeline. When you have finished running tests, the `^TestingClient.Success` variable stores a boolean value indicating whether the tests were successful or not.
 
 You can exit the testing job via the `$System.Process.Terminate` command with a status code indicating success or failure.
 
 For example, if a `0` exit code indicates success and `1` indicates failure in your testing job, you can use the following command to exit the job:
 ```objectscript
-Do $System.Process.Terminate(,'^APTT.Success)
+Do $System.Process.Terminate(,'^TestingClient.Success)
 ```
 
-The `##class(APTT.ProductionTester).Run()` command also takes a third optional parameter, `ExpectTests`. This parameter is used to indicate whether you expect tests to run. If this parameter is set to 1, the testing client expects at least one test to be loaded and run.
+The `##class(TestingClient.ProductionTester).Run()` command also takes a third optional parameter, `ExpectTests`. This parameter is used to indicate whether you expect tests to run. If this parameter is set to 1, the testing client expects at least one test to be loaded and run.
 
 ## Examples
 An example of a basic production and test definition file is available in the `example` directory.
@@ -172,5 +172,5 @@ We can validate the following:
 ```
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
-|validator&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|The class name of the validator (excluding the package). You can create a custom validator by creating a class in the `APTT.Definition.Validators` package|
+|validator&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|The class name of the validator (excluding the package). You can create a custom validator by creating a class in the `TestingClient.Definition.Validators` package|
 |options |object|A set of key-value pairs of options to pass to the validator to modify its behaviour.|

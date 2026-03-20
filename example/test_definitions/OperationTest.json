@@ -1,15 +1,15 @@
 {
-    "production": "APTT.Example.Production",
+    "production": "TestingClient.Example.Production",
     "namespace": "NHSINTERFACES",
     "tests": [
         {
             "name": "MyOperation",
-            "class": "APTT.Example.Operation",
+            "class": "TestingClient.Example.Operation",
             "interactions": [
                 {
                     "name": "Test Example Request",
                     "request": {
-                        "class": "APTT.Example.Request",
+                        "class": "TestingClient.Example.Request",
                         "properties": {
                             "Name": "Testing",
                             "Gender": "M",
@@ -44,7 +44,7 @@
                         }
                     },
                     "response": {
-                        "class": "APTT.Example.Response",
+                        "class": "TestingClient.Example.Response",
                         "validators": {
                             "Name": {
                                 "validator": "TextValidator",

@@ -1,4 +1,4 @@
-Class APTT.Example.Request Extends (Ens.Request, %XML.Adaptor)
+Class TestingClient.Example.Request Extends (Ens.Request, %XML.Adaptor)
 {
 
 Property Name As %String;
@@ -11,23 +11,23 @@ Property ContactNumbers As array Of %Integer;
 
 Property FavouriteColours As list Of %String;
 
-Property MainAddress As APTT.Example.Model.Address;
+Property MainAddress As TestingClient.Example.Model.Address;
 
-Property OtherAddresses As list Of APTT.Example.Model.Address;
+Property OtherAddresses As list Of TestingClient.Example.Model.Address;
 
-Property NamedAddresses As array Of APTT.Example.Model.Address;
+Property NamedAddresses As array Of TestingClient.Example.Model.Address;
 
 Storage Default
 {
 <Data name="ContactNumbers">
 <Attribute>ContactNumbers</Attribute>
 <Structure>subnode</Structure>
-<Subscript>"APTT.Example.Request.ContactNumbers"</Subscript>
+<Subscript>"TestingClient.Example.Request.ContactNumbers"</Subscript>
 </Data>
 <Data name="NamedAddresses">
 <Attribute>NamedAddresses</Attribute>
 <Structure>subnode</Structure>
-<Subscript>"APTT.Example.Request.NamedAddresses"</Subscript>
+<Subscript>"TestingClient.Example.Request.NamedAddresses"</Subscript>
 </Data>
 <Data name="RequestDefaultData">
 <Subscript>"Request"</Subscript>

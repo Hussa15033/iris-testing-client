@@ -1,5 +1,5 @@
 /// 
-Class APTT.Example.Operation Extends Ens.BusinessOperation
+Class TestingClient.Example.Operation Extends Ens.BusinessOperation
 {
 
 Parameter ADAPTER = "EnsLib.File.OutboundAdapter";
@@ -12,16 +12,16 @@ Parameter INVOCATION = "Queue";
 /// You should replace it and its entry in the MessageMap with your custom operation methods.
 /// See <a href="https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=EGDV_busop#EGDV_busop_message_handlers">the documentation</a>
 /// for tips on how to implement operation methods.
-Method TestCall(pRequest As APTT.Example.Request, Output pResponse As APTT.Example.Response) As %Status
+Method TestCall(pRequest As TestingClient.Example.Request, Output pResponse As TestingClient.Example.Response) As %Status
 {
   Do ..TestCallCM(pRequest, .pResponse)
 
   Quit $$$OK
 }
 
-ClassMethod TestCallCM(pRequest As APTT.Example.Request, Output pResponse As APTT.Example.Response) As %Status
+ClassMethod TestCallCM(pRequest As TestingClient.Example.Request, Output pResponse As TestingClient.Example.Response) As %Status
 {
-  Set pResponse = ##class(APTT.Example.Response).%New()
+  Set pResponse = ##class(TestingClient.Example.Response).%New()
   Set pResponse.Name = "OtherUser"
   Set pResponse.Gender = pRequest.Gender
   Set pResponse.Age = pRequest.Age
@@ -37,7 +37,7 @@ ClassMethod TestCallCM(pRequest As APTT.Example.Request, Output pResponse As APT
 XData MessageMap
 {
 <MapItems>
-  <MapItem MessageType="APTT.Example.Request">
+  <MapItem MessageType="TestingClient.Example.Request">
     <Method>TestCall</Method>
   </MapItem>
 </MapItems>

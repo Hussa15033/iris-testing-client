@@ -1,7 +1,7 @@
 /// 
 /// Auwais's Production Testing Tool
 /// 
-/// The main entry point for the APTT utility
+/// The main entry point for the TestingClient utility
 /// 
 /// This class is the main class that enables testing of the production. It will load all of your
 /// test definition files and play back the interactions stored within the JSON file
@@ -12,12 +12,12 @@
 /// To run this tester:
 /// 	- Create a directory with all of your test definition files
 /// 	- Run with
-/// 		Do ##class(APTT.ProductionTester).Run("/path/to/your/test/definitions/directory", "<your production name>")
+/// 		Do ##class(TestingClient.ProductionTester).Run("/path/to/your/test/definitions/directory", "<your production name>")
 /// 
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 0.6
 /// 
-Class APTT.ProductionTester Extends %UnitTest.TestProduction
+Class TestingClient.ProductionTester Extends %UnitTest.TestProduction
 {
 
 /// The production to test, this is determined at Runtime so a default value of "None" is specified
@@ -26,7 +26,7 @@ Parameter PRODUCTION As CONFIGVALUE = "None";
 /// We want to perform custom error handling for production errors
 Parameter IGNOREPRODUCTIONERRORS = 1;
 
-Property Suites As list Of APTT.Definition.TestSuite;
+Property Suites As list Of TestingClient.Definition.TestSuite;
 
 Property ExpectedErrors As %Integer [ InitialExpression = 0 ];
 
@@ -67,22 +67,22 @@ Method LogColourMessage(pText As %String, pColour As %String = "black")
 ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests As %Boolean = 0, pExitOSProcess As %Boolean = 0) As %Status
 {
 	/// Tool specific globals
-	Kill ^APTT
-	Set ^APTT.TestDefinitionDirectory = pFileDirectory
-	Set ^APTT.Runtime = $ZDT($H)
-	Set ^APTT.ExpectTests = pExpectTests
-	Set ^APTT.Success = 0
-	Set ^APTT.TotalTests = 0
-	Set ^APTT.TestsPassed = 0
-	Set ^APTT.TestsRan = 0
-	Set ^APTT.ExpectedErrors = 0
-	Set ^APTT.AccountedErrors = 0
+	Kill ^TestingClient
+	Set ^TestingClient.TestDefinitionDirectory = pFileDirectory
+	Set ^TestingClient.Runtime = $ZDT($H)
+	Set ^TestingClient.ExpectTests = pExpectTests
+	Set ^TestingClient.Success = 0
+	Set ^TestingClient.TotalTests = 0
+	Set ^TestingClient.TestsPassed = 0
+	Set ^TestingClient.TestsRan = 0
+	Set ^TestingClient.ExpectedErrors = 0
+	Set ^TestingClient.AccountedErrors = 0
 
 	Set dir = ##class(%File).%New(pFileDirectory)
 	If ('##class(%File).DirectoryExists(pFileDirectory)) {
 		Write "[ERROR]: " _ "Directory '" _ pFileDirectory _ "' does not exist.. exiting"
-		Write:pExitOSProcess=1 !,"Exiting with process code "_^APTT.Success
-		Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
+		Write:pExitOSProcess=1 !,"Exiting with process code "_^TestingClient.Success
+		Do:pExitOSProcess=1 $System.Process.Terminate(,^TestingClient.Success)
 		Return $System.Status.Error("InitFailed", "Specified directory '" _ pFileDirectory _ "' does not exist")
 	}
 
@@ -99,16 +99,16 @@ ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests 
 	Set tSC = ##super()
 	
 	Write !,"----- Summary -----",!
-	Write "- Total tests: " _ ^APTT.TotalTests,!
-	Write "- Tests ran: " _ ^APTT.TestsRan,!
+	Write "- Total tests: " _ ^TestingClient.TotalTests,!
+	Write "- Tests ran: " _ ^TestingClient.TestsRan,!
 	
 	Set percentPassed = 0
-	Set:^APTT.TestsRan>0 percentPassed = $NUMBER(((^APTT.TestsPassed / ^APTT.TotalTests) * 100), 0)
-	Write "- Tests passed: " _ ^APTT.TestsPassed _ " / " _ ^APTT.TotalTests _ "(" _ percentPassed _ "%)",!
-	Write "- Errors Accounted For: " _ ^APTT.AccountedErrors _ " / " _ ^APTT.ExpectedErrors,!
+	Set:^TestingClient.TestsRan>0 percentPassed = $NUMBER(((^TestingClient.TestsPassed / ^TestingClient.TotalTests) * 100), 0)
+	Write "- Tests passed: " _ ^TestingClient.TestsPassed _ " / " _ ^TestingClient.TotalTests _ "(" _ percentPassed _ "%)",!
+	Write "- Errors Accounted For: " _ ^TestingClient.AccountedErrors _ " / " _ ^TestingClient.ExpectedErrors,!
 
-	Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
-	If ($GET(^APTT.Success, "") = 1) {
+	Do:pExitOSProcess=1 $System.Process.Terminate(,^TestingClient.Success)
+	If ($GET(^TestingClient.Success, "") = 1) {
 		Return $$$OK
 	} Else {
 		Return ..Error("Tests were not successful")
@@ -117,7 +117,7 @@ ClassMethod Run(pFileDirectory As %String, pProduction As %String, pExpectTests 
 
 Method OnBeforeProductionStart() As %Status
 {
-	Set testDefinitionDirectory = $GET(^APTT.TestDefinitionDirectory, "")
+	Set testDefinitionDirectory = $GET(^TestingClient.TestDefinitionDirectory, "")
 	If (testDefinitionDirectory = "") {
 		Do $$$AssertFailure("No test definition directory was specified")
 	}
@@ -158,18 +158,18 @@ Method OnAfterProductionStart() As %Status
 
 Method OnAfterProductionStop() As %Status
 {
-	Do ..LogColourMessage("Total of " _ ^APTT.TestsPassed _ "/" _ ^APTT.TotalTests _ " tests were successful out of " _ ^APTT.TestsRan _ " tests ran", "blue")
+	Do ..LogColourMessage("Total of " _ ^TestingClient.TestsPassed _ "/" _ ^TestingClient.TotalTests _ " tests were successful out of " _ ^TestingClient.TestsRan _ " tests ran", "blue")
 
-	Do $$$AssertEquals(^APTT.TestsPassed, ^APTT.TotalTests)
-	Do $$$AssertEquals(^APTT.TestsRan, ^APTT.TotalTests)
+	Do $$$AssertEquals(^TestingClient.TestsPassed, ^TestingClient.TotalTests)
+	Do $$$AssertEquals(^TestingClient.TestsRan, ^TestingClient.TotalTests)
 	
-	If ((^APTT.TestsPassed = ^APTT.TotalTests) && (^APTT.TestsRan = ^APTT.TotalTests)) {
-		/// Check all tests passed and all tests ran before setting the ^APTT.Success global, as this global is the
+	If ((^TestingClient.TestsPassed = ^TestingClient.TotalTests) && (^TestingClient.TestsRan = ^TestingClient.TotalTests)) {
+		/// Check all tests passed and all tests ran before setting the ^TestingClient.Success global, as this global is the
 		/// most important global which dictates whether the tests passed or not
 		Do ..LogColourMessage("All tests ran and were successful", "green")
-		Set ^APTT.Success = 1
+		Set ^TestingClient.Success = 1
 	} Else {
-		Set ^APTT.Success = 0
+		Set ^TestingClient.Success = 0
 	}
 
 	Write ..Storage.%ToJSON()
@@ -198,7 +198,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 			Set path = ##class(%File).NormalizeFilename(rSet.%Get("Name"))
 			Set filename = ##class(%File).GetFilename(path)
 			Do ..LogColourMessage("---->Loading " _ filename _ "...", "blue")
-			Set testSuite = ##class(APTT.Parser).LoadFileAsTestSuite(path)
+			Set testSuite = ##class(TestingClient.Parser).LoadFileAsTestSuite(path)
 
 			Do ..LogColourMessage("------>Loaded", "green")
 
@@ -212,7 +212,7 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 			/// Count how many test cases there are
 			Set tKey = testSuite.TestCases.Next("")
 			While tKey '= "" {
-				Do $I(^APTT.TotalTests, testSuite.TestCases.GetAt(tKey).Interactions.Size)
+				Do $I(^TestingClient.TotalTests, testSuite.TestCases.GetAt(tKey).Interactions.Size)
 				Set tKey = testSuite.TestCases.Next(tKey)
 			}
 		} Catch ex {
@@ -223,10 +223,10 @@ Method LoadTestDefinitionFiles(pFileDirectory As %String) As %Status [ Private ]
 	
 	If ..Suites.Size = 0 {
 		Do ..LogMessage("-->No test suites found")
-		Return:^APTT.ExpectTests=1 ..Error("Tests were expected, however none were loaded")
+		Return:^TestingClient.ExpectTests=1 ..Error("Tests were expected, however none were loaded")
 	} Else {
 		Do ..LogColourMessage("-->" _ ..Suites.Size _ " test suites loaded", "blue")
-		Do ..LogColourMessage("-->Identified " _ ^APTT.TotalTests _ " tests to run", "blue")
+		Do ..LogColourMessage("-->Identified " _ ^TestingClient.TotalTests _ " tests to run", "blue")
 	}
 
 	Return $$$OK
@@ -289,7 +289,7 @@ Method VerifyAsyncMessages(pAsyncMessages As %ListOfObjects) As %Status
 	Set ..CheckedBaseMessageHeaderID = ..GetLastMessageHeaderID()
 	Set baseMessageHeaderID = ..CheckedBaseMessageHeaderID
 	For i=1:1:pAsyncMessages.Size {
-		#dim asyncMessage As APTT.Definition.Messages.AsyncMessage
+		#dim asyncMessage As TestingClient.Definition.Messages.AsyncMessage
 		Set asyncMessage = pAsyncMessages.GetAt(i)
 		
 		If (asyncMessage.Source = "") || (asyncMessage.Target = "") {
@@ -373,7 +373,7 @@ Method VerifyAsyncMessages(pAsyncMessages As %ListOfObjects) As %Status
 	}
 }
 
-Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Private ]
+Method RunOneTestSuite(pTestSuite As TestingClient.Definition.TestSuite) As %Status [ Private ]
 {
 	/// TODO:
 	/// 	KEY POINT: USE ..LOGERRORS FOR NON-FATAL ERRORS OTHERWISE RETURN AN ERROR
@@ -383,7 +383,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 	/// Attempt to run all messages within this production
 	Set tc = pTestSuite
 	For i=1:1:pTestSuite.TestCases.Size {
-		#dim testCase As APTT.Definition.TestCase
+		#dim testCase As TestingClient.Definition.TestCase
 		Set testCase = pTestSuite.TestCases.GetAt(i)
 		
 		Set targetHostName = testCase.TargetHostName
@@ -421,7 +421,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 		Set interactions = testCase.Interactions
 
 		For j=1:1:testCase.Interactions.Size {
-			#dim interaction As APTT.Definition.Interaction
+			#dim interaction As TestingClient.Definition.Interaction
 			Set interaction = testCase.Interactions.GetAt(j)
 
 			If (interaction.Name '= "") {
@@ -429,7 +429,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 			} Else {
 				Do ..LogColourMessage("---->Running interaction with index " _ j, "blue")
 			}
-			Do $I(^APTT.TestsRan, 1)
+			Do $I(^TestingClient.TestsRan, 1)
 
 			/// Generate the Ens.Request message we will be sending into the
 			/// production
@@ -476,7 +476,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 				$$$ThrowOnError(asyncSC)
 				Do $$$AssertStatusOK(asyncSC)
 
-				Do:$$$ISOK(validationSC)&&$$$ISOK(asyncSC) $I(^APTT.TestsPassed, 1)
+				Do:$$$ISOK(validationSC)&&$$$ISOK(asyncSC) $I(^TestingClient.TestsPassed, 1)
 			} Catch ex {
 				Set interactionName = "Interaction index " _ j
 				Set:interaction.Name'="" interactionName = interaction.Name
@@ -492,7 +492,7 @@ Method RunOneTestSuite(pTestSuite As APTT.Definition.TestSuite) As %Status [ Pri
 
 /// This method checks the errors since the last check to ensure the errors
 /// that were expected from this interaction are accounted for
-Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %Status
+Method CheckInteractionErrors(pInteraction As TestingClient.Definition.Interaction) As %Status
 {
 	Write "Checking interaction errors.."
 	Do ..LogColourMessage("Running CheckInteractionErrors()", "blue")
@@ -504,7 +504,7 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 	Set expectedErrCnt = pInteraction.MessageResponse.ExpectedErrorCount
 	Set expectedErrList = pInteraction.MessageResponse.ExpectedErrors
 
-	Do $I(^APTT.ExpectedErrors, expectedErrCnt)
+	Do $I(^TestingClient.ExpectedErrors, expectedErrCnt)
 
 	Do ..GetEventLog("error","",..CheckedBaseLogID, .Errs, .n)
 
@@ -526,12 +526,12 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 				Do ..LogColourMessage("Expected production error to contain text '" _ expectedErr _ "' but actual error is '" _ errText _ "'", "red")
 				Set tSC = $System.Status.Error(5001, ..ColourText("One or more production errors could not be validated -- Please see above", "red"))
 			} Else {
-				Do $I(^APTT.AccountedErrors, 1)
+				Do $I(^TestingClient.AccountedErrors, 1)
 				Do ..LogColourMessage("Error " _ i _ " is an expected error and contains the specified text", "green")
 			}
 		} Else {
 			Do ..LogMessage("[" _ configName _ "]: Error occurred - " _ errText)
-			Do $I(^APTT.AccountedErrors, 1)
+			Do $I(^TestingClient.AccountedErrors, 1)
 		}
 	}
 
@@ -547,14 +547,14 @@ Method CheckInteractionErrors(pInteraction As APTT.Definition.Interaction) As %S
 Method CheckErrors() As %Status
 {
 	// Automatically check errors
-	Do $$$AssertEquals(^APTT.AccountedErrors, ^APTT.ExpectedErrors)
+	Do $$$AssertEquals(^TestingClient.AccountedErrors, ^TestingClient.ExpectedErrors)
 	Do ..GetEventLog("error","", ..BaseLogId,,.TotalErrors)
 
-	If (^APTT.AccountedErrors'=^APTT.ExpectedErrors)||(^APTT.AccountedErrors'=TotalErrors) {
+	If (^TestingClient.AccountedErrors'=^TestingClient.ExpectedErrors)||(^TestingClient.AccountedErrors'=TotalErrors) {
 		/// There were unaccounted errors within the production
-		Set msg = "Not all errors have been accounted for. Expected " _ ^APTT.ExpectedErrors _ " errors but actually accounted for " _ ^APTT.AccountedErrors _ " errors, there were " _ TotalErrors _ " errors that occurred in total."
+		Set msg = "Not all errors have been accounted for. Expected " _ ^TestingClient.ExpectedErrors _ " errors but actually accounted for " _ ^TestingClient.AccountedErrors _ " errors, there were " _ TotalErrors _ " errors that occurred in total."
 		Do ..LogErrors(..Error(..ColourText(msg, "red")))
-		Set ^APTT.Success = 0
+		Set ^TestingClient.Success = 0
 		Quit $System.Status.Error(5001, msg)
 	}
 	Quit $$$OK

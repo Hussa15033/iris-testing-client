@@ -6,7 +6,7 @@
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 05.11.2025
 /// 
-Class APTT.Definition.Messages.AsyncMessage Extends APTT.Definition.Messages.MessageResponse
+Class TestingClient.Definition.Messages.AsyncMessage Extends TestingClient.Definition.Messages.MessageResponse
 {
 
 Parameter MESSAGECLASS = "Ens.MessageBody";
@@ -33,7 +33,7 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 
 	If (pParent.AsyncMessages.Size > 0) {
 		/// We have already inserted all elements from the JSON into this object, return a dud object
-		Return ##class(APTT.Definition.Messages.AsyncMessage).%New()
+		Return ##class(TestingClient.Definition.Messages.AsyncMessage).%New()
 	}
 
 	Set iter = asyncMessages.%GetIterator()
@@ -58,7 +58,7 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 		Set tempObj.response = asyncMessage
 
 		/// Create an instance of Async Messages
-		#dim instance As APTT.Definition.Messages.AsyncMessage
+		#dim instance As TestingClient.Definition.Messages.AsyncMessage
 		Set instance = ##super(tempObj, pParent)
 		Set instance.Timeout = jTimeout
 		Set instance.Source = jSource
@@ -70,7 +70,7 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 	}
 
 	/// Redundant return
-	Return ##class(APTT.Definition.Messages.AsyncMessage).%New()
+	Return ##class(TestingClient.Definition.Messages.AsyncMessage).%New()
 }
 
 Method ValidateResponse(pMsgHeader As Ens.MessageHeader, ByRef pStorage As %DynamicObject) As %Status

@@ -6,7 +6,7 @@
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 01.08.2025
 /// 
-Class APTT.Definition.Validators.EqualsValidator Extends APTT.Definition.Validators.Base
+Class TestingClient.Definition.Validators.EqualsValidator Extends TestingClient.Definition.Validators.Base
 {
 
 Method OnValidate(pExpectedValue As %String(MAXLEN=""), pActualValue As %String(MAXLEN="")) As %Status

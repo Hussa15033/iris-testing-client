@@ -4,7 +4,7 @@
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 05.08.2025
 /// 
-Class APTT.Definition.Messages.MessageRequest Extends APTT.Definition.Messages.Message
+Class TestingClient.Definition.Messages.MessageRequest Extends TestingClient.Definition.Messages.Message
 {
 
 /// Message classes from the test definition file MUST be a child of Ens.Request

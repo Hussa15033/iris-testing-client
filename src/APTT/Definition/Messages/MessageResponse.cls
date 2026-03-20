@@ -5,12 +5,12 @@
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 05.08.2025
 /// 
-Class APTT.Definition.Messages.MessageResponse Extends APTT.Definition.Messages.Message
+Class TestingClient.Definition.Messages.MessageResponse Extends TestingClient.Definition.Messages.Message
 {
 
 Parameter MESSAGECLASS = "%Persistent";
 
-Property Validators As array Of APTT.Definition.Validators.Base;
+Property Validators As array Of TestingClient.Definition.Validators.Base;
 
 Property ResultStore As array Of %String;
 
@@ -43,7 +43,7 @@ ClassMethod %JSONNew(pJSON As %DynamicObject, pParent As %RegisteredObject) As %
 		/// options
 		While (iter.%GetNext(.key, .value, .type)) {
 			Set fieldName = key
-			Set validatorClass = "APTT.Definition.Validators." _ value.validator
+			Set validatorClass = "TestingClient.Definition.Validators." _ value.validator
 			Set validatorOptions = value.options
 
 			Try {
@@ -302,7 +302,7 @@ Method ValidateResponse(pMsgHeader As Ens.MessageHeader, ByRef pStorage As %Dyna
 		}
 		If '..Validators.IsDefined(path) {
 			/// If no validator is specified for this path, we use the default validator
-			Set validator = ##class(APTT.Definition.Validators.EqualsValidator).%New("")
+			Set validator = ##class(TestingClient.Definition.Validators.EqualsValidator).%New("")
 			Do ..Validators.SetAt(validator, path)
 		}
 
