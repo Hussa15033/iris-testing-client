@@ -1,38 +1,96 @@
-# Auwais' Testing Client
+# Auwais' Production Testing Client
 
 ## Description
-This client is a testing tool to enable test-driven development and validation of productions by allowing you to specify production request/response messages through a JSON schema. This JSON schema is then parsed and all messages are created and replayed through the production and their responses compared with the test definition schema
-
-## Getting Started
-To start with you can 
-
-## Usage
-### Using as a standalone tool
-
-### Using as part of a CI/CD process
-
-## Bug Fixes
--
-
-## To do
-* [Done] Rename "ContainsValidator" to "TextValidator" and update the code as needed, use the examples in the Validators section below
-* Ensure namespace and production classes are checked properly
-* [Done] Restructure files and use the ATT.* package name
-* Finish any "TODOs" within the text documentation
-* Document all classes properly
-* Clean up dead code
-* Ensure all IF conditions are properly paranthesised
-* [Done] Move tests to an "example" folder
-* Create a "build" folder with the XML export of the first release
-* In the getting started steps, show how to import the tool and use it
-## Examples
-
-## Validators
+This client is a testing tool to enable test-driven development and validation of productions by allowing you to specify production request/response messages through JSON test definition files. These files are then parsed and all messages are created and replayed through the production and their responses compared with the test definition schema
 
 ## Authors
 Auwais Hussain - Sales Engineering UKI
 
 For any queries, bugs or enhancements please get in touch at ahussain@intersystems.com
+
+## Installation
+Install the project by imported the `dist/latest.xml` file into IRIS
+1. Download the `latest.xml` file
+2. From with the management portal, navigate to `System Explorer > Classes`
+3. Click the `Import` button in the top menu
+4. Select the downloaded `latest.xml` file
+5. Click `Next` and ensure all the classes are selected
+6. Click `Import` to finalise the import
+
+## Quickstart
+### Recording tests
+Once the testing client has been imported, record tests by entering the following commands:
+```objectscript
+USER>zn "<your-namespace>"
+USER>Do ##class(APTT.Recorder).Record()
+```
+
+Where `<your-namespace>` is the namespace the testing client was imported to and where your production is in
+
+When prompted, enter:
+1. Your production class name
+2. The "target item name", this is the name of the production component you wish to test
+3. The file to save all recorded tests to
+
+The tool will then prompt you to select an option - [R] to record new tests or [E] to exit. To record a test, enter "R" and press enter.
+
+You should then see the following text:
+
+```objectscript
+USER>**Please test the component using the management portal..
+```
+
+**Note:** Your production should be running and testing should be enabled.
+
+From the management portal, open your production by navigating to `Interoperability > Configure > Production`. Click the component you wish to test, and click the `Actions` tab in the right hand pane and click `Test`. Enter your test request message from the management portal and click `Invoke Testing Service`
+
+Go back to the terminal, your request message and response will be picked up by the tool. You can enter "A" to accept the test or "R" to reject the test.
+
+You can record as many tests as needed. When you have finished testing, enter "E" to exit the tool. The tests will be saved to the file you specified. If the file fails to save, the tool will output the raw JSON text into the terminal for you to copy/paste
+
+### Running tests
+Run tests via the `APTT.ProductionTester` class in the following way:
+```objectscript
+USER>zn "<your-namespace>"
+USER>Do ##class(APTT.ProductionTester).Run("<test-directory>", "<production-class>")
+```
+
+**\<your-namespace\>**: The namespace the testing tool has been imported into\
+**\<test-directory\>**: The directory that holds all the test definition files\
+**\<production-class\>**: The name of the production to test
+
+**Note**: The testing client should be imported into the same namespace as the production you are testing. If you wish to import the testing client elsewhere, ensure your namespace has a mapping for the testing client class files
+
+After running the tests, the following globals are set and can be used to read the stats of the last test run:
+```
+^APTT.TestDefinitionDirectory: The test definition directory
+^APTT.Runtime: The date/time of the run
+^APTT.ExpectTests: Whether tests were expected in the run
+^APTT.Success: Whether the last run was successful
+^APTT.TotalTests: The total number of tests that were loaded
+^APTT.TestsPassed = The total number of tests that passed
+^APTT.TestsRan = The total number of tests that actually ran
+```
+
+For example, to write the success of the last run to the terminal:
+```objectscript
+USER>Write ^APTT.Success
+```
+
+### Using as part of a CI/CD process
+The testing tool can be used as part of an automated testing job in a CI/CD pipeline. When you have finished running tests, the `^APTT.Success` variable stores a boolean value indicating whether the tests were successful or not.
+
+You can exit the testing job via the `$System.Process.Terminate` command with a status code indicating success or failure.
+
+For example if a "0" exit code indicates success and "1" indicates failure in your testing job, you can use the following command to exit the job
+```
+Do $System.Process.Terminate(,'^APTT.Success)
+```
+
+The `##class(APTT.ProductionTester).Run()` command also takes in a 3rd optional parameter "ExpectTests". This parameter is used to indicate whether you expect tests to run. If this parameter is set to 1, the testing client expects atleast 1 test to be loaded and ran
+
+## Examples
+An example of a basic production and test definition file is available in the `example` directory.
 
 ## Test Definition Schema
 ### Root - Test Suite
@@ -49,7 +107,7 @@ Each test case is aimed at a specific business component and contains the tests 
 | ---------- | ---- | ----------- |
 |name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|The name of the business component within the production|
 |class|string|The classname of the business component|
-|intearctions|array of Interactions|An array of interactions, each interaction contains a request message that will be sent to the business component, and a response message that will be validated|
+|interactions|array of Interactions|An array of interactions, each interaction contains a request message that will be sent to the business component, and a response message that will be validated|
 
 ### Interaction
 An interaction is a pair containing a request and response message. The request message will be sent into the business component and the response will be validated. Flexibility of responses is achieved with custom Validators.
@@ -59,7 +117,7 @@ An interaction is a pair containing a request and response message. The request 
 |response |Response Message|The expected response from the business component|
 
 ### Request Message
-A request message is a JSON object for a specific Request message class. The message class does <b><u>NOT</u></b> have to be JSON enabled and is created on the fly using it's properties
+A request message is a JSON object for a specific Request message class. The message class does <b><u>NOT</u></b> have to be JSON enabled and is created at runtime using it's properties
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
 |class&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|The request message class name|
@@ -114,5 +172,5 @@ We can validate the following:
 ```
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
-|validator&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|The classname of the validator (excluding the package). You can create a custom validator by creating a class in the `ATT.Validators` package|
+|validator&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|The classname of the validator (excluding the package). You can create a custom validator by creating a class in the `APTT.Definition.Validators` package|
 |options |object|A key value pair of options to pass into the validator to modify it's behaviour|

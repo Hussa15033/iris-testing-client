@@ -158,7 +158,7 @@ ClassMethod MakeBooleanPrompt(pPrompt As %String, pAcceptedAnswers As %String)
 	Return action
 }
 
-ClassMethod Record(pProductionClass As %String = "", pTargetName As %String = "")
+ClassMethod Record(pProductionClass As %String = "", pTargetName As %String = "", pFileName As %String = "")
 {
 		If (pProductionClass = "") {
 			Read !,"Enter the production class: ",pProductionClass
@@ -189,6 +189,20 @@ ClassMethod Record(pProductionClass As %String = "", pTargetName As %String = ""
 			Return
 		}
 
+		If pFileName = "" {
+			Read !,"Enter the file to save the tests to: ",pFileName
+		}
+
+		Set dir = ##class(%File).GetDirectory(pFileName)
+
+		If '##class(%File).DirectoryExists(dir) {
+			Throw ##class(%Exception.General).%New("Directory does not exist","-33312",,"The directory '" _ dir _ "' does not exist. Please create the directory before running the client")
+		}
+
+		If ##class(%File).Exists(pFileName) {
+			Throw ##class(%Exception.General).%New("File already exists","-33312",,"The file '" _ pFileName _ "' already exists")
+		}
+
 		#dim pTarget As Ens.Config.Item
 
 		Set testDefinition = {}
@@ -203,6 +217,7 @@ ClassMethod Record(pProductionClass As %String = "", pTargetName As %String = ""
 		Write !,!,"**Selected production '" _ pProductionClass _ "'"
 		Write !,"**Selected target item '" _ pTarget.Name _ "'"
 		Write !,"**Selected target item class '" _ pTarget.ClassName _ "'",!
+		Write !,"**Saving tests to '" _ pFileName _ "'",!
 
 		While (1) {
 			Set action = ..MakeBooleanPrompt("Record a new test [R] or exit [E]: ", "R,E")
@@ -213,8 +228,16 @@ ClassMethod Record(pProductionClass As %String = "", pTargetName As %String = ""
 				Set testSuite.interactions = interactions
 				Do testDefinition.tests.add(testSuite)
 
-				Write !,"Please paste this JSON into your test definition file:",!
-				Write testDefinition.%ToJSON()
+				Try {
+					Do testDefinition.%ToJSON(pFileName)
+
+					Throw:'##class(%File).Exists(pFileName) ##class(%Exception.General).%New("Failed to save","-33313",,"Test definition file failed to save")
+					Write !,"**All tests saved successfully to " _ pFileName
+				} Catch ex {
+					Write !,"**Failed to save tests to '" _ pFileName _ "'"
+					Write !,"**Please paste the following JSON into your test definition file:",!
+					Write testDefinition.%ToJSON()
+				}
 				Return
 			}
 

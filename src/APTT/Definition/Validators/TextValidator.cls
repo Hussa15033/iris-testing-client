@@ -1,5 +1,5 @@
 /// 
-/// A validator for TextFields. This validator takes various options to perform different validations. Each option adds to the validation checks.
+/// A validator for TextFields. This validator takes various options to perform different text validations. Each option adds to the validation checks.
 /// 
 /// @author Auwais Hussain (ahussain@intersystems.com)
 /// @version 18.08.2025
