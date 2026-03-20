@@ -1,4 +1,4 @@
-# Auwais's Production Testing Client
+# Testing Client
 
 ## Description
 This client is a testing tool that enables test-driven development and production validation by allowing you to specify production request/response messages in JSON test definition files. These files are then parsed, the messages are created and replayed through the production, and the responses are compared against the test definition schema.
