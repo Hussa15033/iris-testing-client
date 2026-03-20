@@ -1,0 +1,2357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="IRIS" version="26" zv="IRIS for Windows (x86-64) 2024.3.1 (Build 228U)" ts="2026-03-20 11:27:21">
+<Class name="APTT.Definition.Interaction">
+<Description>
+
+Represents an interaction, which is a Request/Response message pair going into a component. The AsyncMessages can be used to
+test for asynchronous messages after the interaction occurs.
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 05.11.2025
+</Description>
+<Super>%SerialObject,%JSON.Adaptor</Super>
+<TimeChanged>67649,41191.817007</TimeChanged>
+<TimeCreated>67649,41191.817007</TimeCreated>
+
+<Property name="Name">
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="name"/>
+<Parameter name="MAXLEN"/>
+</Property>
+
+<Property name="MessageRequest">
+<Type>APTT.Definition.Messages.MessageRequest</Type>
+<Parameter name="%JSONFIELDNAME" value="request"/>
+</Property>
+
+<Property name="MessageResponse">
+<Type>APTT.Definition.Messages.MessageResponse</Type>
+<Parameter name="%JSONFIELDNAME" value="response"/>
+</Property>
+
+<Property name="AsyncMessages">
+<Type>APTT.Definition.Messages.AsyncMessage</Type>
+<Collection>list</Collection>
+<Parameter name="%JSONFIELDNAME" value="asyncmessages"/>
+</Property>
+
+<Storage name="Default">
+<Type>%Storage.Serial</Type>
+<State>InteractionState</State>
+<StreamLocation>^APTT.Definition.InteractionS</StreamLocation>
+<Data name="InteractionState">
+<Value name="1">
+<Value>MessageRequest</Value>
+</Value>
+<Value name="2">
+<Value>MessageResponse</Value>
+</Value>
+<Value name="3">
+<Value>Name</Value>
+</Value>
+<Value name="4">
+<Value>AsyncMessages</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="APTT.Definition.Messages.AsyncMessage">
+<Description>
+
+Message class responsible for parsing Asynchronous messages.
+
+These messages include a timeout and are expected to be in response to an interaction
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 05.11.2025
+</Description>
+<Super>APTT.Definition.Messages.MessageResponse</Super>
+<TimeChanged>67649,41191.8334255</TimeChanged>
+<TimeCreated>67649,41191.8334255</TimeCreated>
+
+<Parameter name="MESSAGECLASS">
+<Default>Ens.MessageBody</Default>
+</Parameter>
+
+<Property name="Source">
+<Type>%String</Type>
+</Property>
+
+<Property name="Target">
+<Type>%String</Type>
+</Property>
+
+<Property name="Timeout">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Before">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="10000"/>
+</Property>
+
+<Property name="After">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="10000"/>
+</Property>
+
+<Method name="%JSONNew">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pJSON:%DynamicObject,pParent:%RegisteredObject</FormalSpec>
+<ReturnType>%RegisteredObject</ReturnType>
+<Implementation><![CDATA[
+	#dim asyncMessages As %Library.DynamicArray
+
+	Set asyncMessages = pJSON.asyncmessages
+
+	If (pJSON.%IsDefined("asyncmessages") && ('$ISOBJECT(asyncMessages) || 'asyncMessages.%Extends("%DynamicArray"))) {
+		Throw ##class(%Exception.General).%New("Invalid JSON","-11",,"The 'asyncmessages' property has not been set correctly. Please ensure the value is an array of AsyncMessages")
+	}
+
+	If (pParent.AsyncMessages.Size > 0) {
+		/// We have already inserted all elements from the JSON into this object, return a dud object
+		Return ##class(APTT.Definition.Messages.AsyncMessage).%New()
+	}
+
+	Set iter = asyncMessages.%GetIterator()
+
+	/// Loop through all async messages and create instances of this class.
+	/// This is done because the %JSONNew() is called for EVERY item in the last, however the problem is
+	/// it is not called with a key value, so we can't track which item this method is supposed to generate
+	/// For this reason, we generate all items on the first pass, and then on remaining passes we insert
+	/// dud objects
+	While (iter.%GetNext(.key, .asyncMessage, .type)) {
+		Set jTimeout = asyncMessage.timeout
+		Set jSource = asyncMessage.source
+		Set jTarget = asyncMessage.target
+		Set jBefore = asyncMessage.before
+		Set jAfter = asyncMessage.after
+
+		If (jSource = "" || jTarget = "" || jTimeout = "") {
+			Throw ##class(%Exception.General).%New("Invalid async message defined",,"-30943","Invalid async message defined. Ensure all async messages have a source, target and timeout field defined")
+		}
+
+		Set tempObj = {}
+		Set tempObj.response = asyncMessage
+
+		/// Create an instance of Async Messages
+		#dim instance As APTT.Definition.Messages.AsyncMessage
+		Set instance = ##super(tempObj, pParent)
+		Set instance.Timeout = jTimeout
+		Set instance.Source = jSource
+		Set instance.Target = jTarget
+		Set instance.Before = jBefore
+		Set instance.After = jAfter
+
+		Do pParent.AsyncMessages.Insert(instance)
+	}
+
+	/// Redundant return
+	Return ##class(APTT.Definition.Messages.AsyncMessage).%New()
+]]></Implementation>
+</Method>
+
+<Method name="ValidateResponse">
+<FormalSpec><![CDATA[pMsgHeader:Ens.MessageHeader,&pStorage:%DynamicObject]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	If (pMsgHeader.SourceConfigName '= ..Source) {
+		Throw ##class(%Exception.General).%New("Source does not match",,"-30942","Expected async message source to be '" _ ..Source _ "', instead found '" _ pMsgHeader.SourceConfigName _ "'")
+	}
+
+	If (pMsgHeader.TargetConfigName '= ..Target) {
+		Throw ##class(%Exception.General).%New("Target does not match",,"-30942","Expected async message target to be '" _ ..Target _ "', instead found '" _ pMsgHeader.TargetConfigName _ "'")
+	}
+
+	Return ##super(pMsgHeader, .pStorage)
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Storage.Serial</Type>
+<Data name="MessageState">
+<Value name="1">
+<Value>ClassName</Value>
+</Value>
+<Value name="2">
+<Value>Properties</Value>
+</Value>
+<Value name="3">
+<Value>Validators</Value>
+</Value>
+<Value name="4">
+<Value>ExpectedErrors</Value>
+</Value>
+<Value name="5">
+<Value>ExpectedErrorCount</Value>
+</Value>
+<Value name="6">
+<Value>Source</Value>
+</Value>
+<Value name="7">
+<Value>Target</Value>
+</Value>
+<Value name="8">
+<Value>Timeout</Value>
+</Value>
+<Value name="9">
+<Value>Before</Value>
+</Value>
+<Value name="10">
+<Value>After</Value>
+</Value>
+<Value name="11">
+<Value>ResultStore</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="APTT.Definition.Messages.Message">
+<Description>
+
+Abstract message class used to encapsulate request and response messages
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 05.08.2025
+</Description>
+<Abstract>1</Abstract>
+<Super>%SerialObject</Super>
+<TimeChanged>67649,41191.8393288</TimeChanged>
+<TimeCreated>67649,41191.8393288</TimeCreated>
+
+<Parameter name="MESSAGECLASS">
+<Description>
+The type of message this is, should be either Ens.Request or Ens.Response</Description>
+<Abstract>1</Abstract>
+</Parameter>
+
+<Property name="ClassName">
+<Description>
+The message class name</Description>
+<Type>%String</Type>
+</Property>
+
+<Property name="Properties">
+<Description>
+Parsed JSON properties from the test definition file</Description>
+<Type>%DynamicObject</Type>
+</Property>
+
+<Method name="%JSONImportInternal">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GetPropertyDefinition">
+<Description>
+TODO: MOVE THIS TO A UTIL CLASS</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pClassname,pProperty,*Collection:%String,*Type:%String</FormalSpec>
+<Implementation><![CDATA[
+	Set def = ##class(%Dictionary.CompiledProperty).%OpenId(pClassname _ "||" _ pProperty)
+	If (def = "") {
+		Throw ##class(%Exception.General).%New("Unable to find property","-77",,"Could not load property definition for property '" _ pProperty _ "' in class '" _ pClassname _ "', property does not exist")
+	}
+
+	Set Collection = def.Collection
+	Set Type = def.Type
+]]></Implementation>
+</Method>
+
+<Method name="%JSONNew">
+<Description><![CDATA[
+<p>For some reason the parent object is passed into 'pJSON', so this method should be overridden
+to pass the correct JSON object from the parent</p>
+<p>Ensure the "request" field is the %JSONFIELDNAME of Interaction.MessageRequest</p>
+<p><property>pJSON</property> - The parent JSON object from the test definition file</p>
+<p><property>pParent</property> - The parent ObjectScript OBJECT</p>]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pJSON:%DynamicObject,pParent:%RegisteredObject</FormalSpec>
+<ReturnType>%RegisteredObject</ReturnType>
+<Implementation><![CDATA[
+	If ($PARAMETER(, "MESSAGECLASS") = "") {
+		Throw ##class(%Exception.General).%New("Message class not specified","-883",,"The class " _ $CLASSNAME() _ " does not specify the MESSAGECLASS parameter. Please specify either Ens.Request or Ens.Response")
+	}
+
+	/// Create a new message 
+	Set request = pJSON
+	Set message = $CLASSMETHOD($CLASSNAME(), "%New")
+	Set message.ClassName = request.class
+	Set message.Properties = request.properties
+
+	/// If the message class specified in the test does not extend the MESSAGECLASS parameter
+	/// throw an error
+	Set messageClassValid = 0
+	Try {
+		/// "" is allowed for classname to specify a null message
+		If message.ClassName = "" {
+			Set messageClassValid = 1
+		} Else {
+			Set messageClassValid = $CLASSMETHOD(message.ClassName, "%Extends", ..#MESSAGECLASS)
+		}
+	} Catch ex {
+		Throw ##class(%Exception.General).%New("Message class invalid","-891",,"The message class '" _ message.ClassName _ "' defined in the test file could not be validated, ensure the class exists and has been compiled. Error: " _ ex.DisplayString())
+	}
+
+	If ('messageClassValid) {
+		Throw ##class(%Exception.General).%New("Message class invalid","-882",,"Message class defined in test definition '" _ message.ClassName _ "' is not a child of '" _ ..#MESSAGECLASS _ "'")
+	}
+
+	Return message
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Storage.Serial</Type>
+<State>MessageState</State>
+<StreamLocation>^APTT.Definition.MeA057.MessageS</StreamLocation>
+<Data name="MessageState">
+<Value name="1">
+<Value>ClassName</Value>
+</Value>
+<Value name="2">
+<Value>Properties</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="APTT.Definition.Messages.MessageRequest">
+<Description>
+
+The message request class which parses request messages from the test definition file
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 05.08.2025
+</Description>
+<Super>APTT.Definition.Messages.Message</Super>
+<TimeChanged>67649,41191.9471265</TimeChanged>
+<TimeCreated>67649,41191.9471265</TimeCreated>
+
+<Parameter name="MESSAGECLASS">
+<Description>
+Message classes from the test definition file MUST be a child of Ens.Request</Description>
+<Default>%Persistent</Default>
+</Parameter>
+
+<Property name="Fill">
+<Type>%DynamicObject</Type>
+</Property>
+
+<Method name="%JSONNew">
+<Description><![CDATA[
+
+<p>Parse JSON object into an instance of this MessageRequest class</p>
+<p><property>pJSON</property> - The JSON object to parse</p>
+<p><property>pParent</property> - The parent ObjectScript OBJECT</p>]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pJSON:%DynamicObject,pParent:%RegisteredObject</FormalSpec>
+<ReturnType>%RegisteredObject</ReturnType>
+<Implementation><![CDATA[
+	Set requestJSON = pJSON.request
+	If (requestJSON = "") {
+		Throw ##class(%Exception.General).%New("Invalid JSON","-11",,"The request property does not exist for interaction")
+	}
+
+	Return ##super(requestJSON, pParent)
+]]></Implementation>
+</Method>
+
+<Method name="GenerateMessageRequest">
+<Description><![CDATA[
+
+<p>This method generates an object of the message class specified in the test definition file, this value is
+stored in the <property>ClassName</property> property</p>
+
+<p>It attempts to populate the <property>..Properties</property> property using the
+<method>..PopulateObjectFromJSON</method> method</p>
+
+<p>This method will throw an error if it fails to populate any properties of the message class</p>
+
+<p>Nested object properties will also be instantiated and populated</p>
+]]></Description>
+<FormalSpec>pStorage:%DynamicObject=""</FormalSpec>
+<Implementation><![CDATA[
+	If (pStorage = "") {
+		Set pStorage = {}
+	}
+
+	Set ..Fill = pStorage
+	#dim messageObj As Ens.Request
+	Try {
+		Set messageObj = $CLASSMETHOD(..ClassName, "%New")
+	} Catch ex {
+		Throw ##class(%Exception.General).%New("Failed to instantiate message","-17",,"The request message class specified in the test definition file '" _ ..ClassName _ "' could not be instantiated. Ensure this is a valid message class (error = " _ ex.DisplayString() _ ")")
+	}
+	Do ..PopulateObjectFromJSON(.messageObj, ..Properties)
+
+	Return messageObj
+]]></Implementation>
+</Method>
+
+<Method name="AssertEquals">
+<Description>
+Helper method for assertion</Description>
+<FormalSpec>pStr1,pStr2,pFailMessage</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	If (pStr1 '= pStr2) {
+		Throw ##class(%Exception.General).%New("Equal Assertion Failed","-39",,pStr1 _ " != " _ pStr2 _ ": " _ pFailMessage)
+	}
+
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="PopulateObjectFromJSON">
+<Description>
+A helper method to populate the properties of an object, given the object, and the corresponding
+JSON object, will throw an error if any properties cannot be set
+Todo: Move this method to a helper class, along with the reverse method of turning an object to JSON</Description>
+<FormalSpec>*pObj:%RegisteredObject,pJSON:%DynamicObject</FormalSpec>
+<Implementation><![CDATA[
+	If ('$ISOBJECT(pJSON) || 'pJSON.%Extends("%DynamicObject")) {
+		Throw ##class(%Exception.General).%New("Cannot populate object","-303",,"Cannot populate ObjectScript object of type " _ $CLASSNAME(pObj) _ " as JSON is not a valid %DynamicObject.")
+	}
+
+	/// This method loops through all of the properties in the JSON and sets their value in the
+	/// objectscript object. This is a recursive method and will populate
+	/// serial objects within that object from the JSON
+	Set mIter = pJSON.%GetIterator()
+
+	While mIter.%GetNext(.key, .value, .jsonType) {
+		Do ..GetPropertyDefinition($CLASSNAME(pObj), key, .CollectionType, .DataType)
+
+		Set OSType = $CLASSNAME($PROPERTY(pObj, key))
+		#; w !,"Key " _ key,!
+		#; W "ObjectScript value: " _ value,!
+		#; w "ObjectScript type: "_OSType,!
+		#; w "ObjectScript type 2: " _ CollectionType _ "||" _ DataType,!
+		#; w "JSON Type: " _ jsonType,!
+
+		If ((OSType = value) || (OSType = "")) {
+			/// The objectscript type is a string, check if it is a variable (in format ${varname}, inspired by Gitlab)
+			If (($EXTRACT(value, 1, 2) = "${") && (value [ "}")) {
+				/// Likely a variable, extract the variable name
+				Set varName = $EXTRACT(value, 3, *-1)
+				If (..Fill.%IsDefined(varName)) {
+					Set varValue = ..Fill.%Get(varName)
+					Set value = varValue
+				} Else {
+					Throw ##class(%Exception.General).%New("Cannot create request message: variable does not exist","-3392",,"The variable " _ varName _ " does not exist - cannot populate message, Key: " _ key _ ", JSON: " _ value)
+				}
+			}
+		}
+
+		If ($CLASSMETHOD(DataType, "%Extends", "%Stream.Object")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
+			/// The ObjectScript property is a Stream and the JSON is a primitive type
+			/// Write the JSON primitive to the stream
+			Try {
+				If ($METHOD(pObj, "%Extends", "Ens.StreamContainer")) {
+					// The Object is a stream container, NOT a stream, so we need to initialise the stream
+					Set tempStream = ##class(%Stream.GlobalCharacter).%New()
+					Do tempStream.Write(value)
+					Set tSC = pObj.StreamSet(tempStream)
+				} Else {
+					Set tSC = $METHOD($PROPERTY(pObj, key), "Write", value)
+				}
+			} Catch ex {
+				Throw ##class(%Exception.General).%New("Failed to set stream property","-18",,"Failed to set the property '" _ key _ "' in request message. Check that this property exists and is not ReadOnly (error = " _ ex.DisplayString() _ ")")
+			}
+			Throw:$$$ISERR(tSC) ##class(%Exception.StatusException).ThrowIfInterrupt(tSC)
+		 } ElseIf ((OSType = value) || (OSType = "")) && ((jsonType = "string") || (jsonType = "number") || (jsonType = "boolean")) {
+			/// Both the JSON and ObjectScript field are primitive data types, simply set the property value
+			Try {
+				Set $PROPERTY(pObj, key) = value
+			} Catch ex {
+				Throw ##class(%Exception.General).%New("Failed to set property","-18",,"Failed to set the property '" _ key _ "' in request message. Check that this property exists and is not ReadOnly (error = " _ ex.DisplayString() _ ")")
+			}
+		} ElseIf (CollectionType = "list") {
+			Do ..AssertEquals(jsonType, "array")
+
+			/// We are mapping an array in JSON to either a list of primitive data types in ObjectScript
+			/// or a list of Complex objects in ObjectScript
+			/// We loop over the values in the JSON array and insert them into the list in ObjectScript
+			#dim list As %Collection.AbstractList
+			#dim value As %DynamicArray
+			Set list = $PROPERTY(pObj, key)
+			Set jsonArrayIterator = value.%GetIterator()
+			While jsonArrayIterator.%GetNext(.key1, .value1, .type1) {
+				Set insertVal = ""
+				If $CLASSMETHOD(OSType, "%Extends", "%Collection.ListOfDT") {
+					/// Since we are mapping to a list of primitive data types in ObjectScript,
+					/// we can simply insert this into the list
+					Set insertVal = value1
+				} ElseIf ($CLASSMETHOD(OSType, "%Extends", "%Collection.ListOfObj")) {
+					/// We are inserting into a list of Complex objects, we need to instantiate the object,
+					/// populate it then insert
+					/// We mapping an array of JSON objects in a JSON array to a list of Complex object types in ObjectScript
+					/// First determine the type of the object in ObjectScript, this is stored in the PropertyDefinition
+					/// and extracted to the 'DataType' variable
+					Set insertVal = $CLASSMETHOD(DataType, "%New")
+					Do ..PopulateObjectFromJSON(.insertVal, value1)
+				}
+				Do list.Insert(insertVal)
+			}
+		} ElseIf (CollectionType = "array") {
+			Do ..AssertEquals(jsonType, "object")
+
+			/// We are mapping to an array of primitives/Complex Objects in ObjectScript, this should be stored in a JSON object
+			/// with the key->value mapping remaining the same.
+			/// We loop through all key/value pairs in the JSON and use SetAt to set the assoc array in ObjectScript
+
+			#dim arr As %Collection.AbstractArray
+			Set arr = $PROPERTY(pObj, key)
+			Set jsonObjectIterator = value.%GetIterator()
+			While jsonObjectIterator.%GetNext(.key1, .value1, .type1) {
+				Set putVal = ""
+				If ($CLASSMETHOD(OSType, "%Extends", "%Collection.ArrayOfDT")) {
+					/// Mapping to an array of primitives, we can simply copy the JSON value over
+					Set putVal = value1
+				} ElseIf ($CLASSMETHOD(OSType, "%Extends", "%Collection.ArrayOfObj")) {
+					/// We are mapping to an array of Complex objects in ObjectScript. This is stored as a JSON object in the JSON
+					/// with each key being a string, and each value being another JSON object
+					/// We need to determine the data type using the DataType variable from the %Dictionary.PropertyDefinition
+					/// We loop through all key/value pairs in the JSON, instantiate the ObjectScript objects, populate using
+					/// this same method and then use SetAt to set the keys in the array
+					Set putVal = $CLASSMETHOD(DataType, "%New")
+					Do ..PopulateObjectFromJSON(.putVal, value1)
+				}
+
+				Do arr.SetAt(putVal, key1)
+				
+			}
+		} ElseIf ($CLASSMETHOD(DataType, "%Extends", "%RegisteredObject")) {
+			Set subObj = $PROPERTY(pObj, key)
+			If ('$ISOBJECT(subObj))	 {
+				#; Write "Populating object of type " _ $CLASSNAME(pObj) _ ", property=" _ key _ " of type " _ DataType _ " with value " _ value.%ToJSON(),!,!,!
+				/// If the object has not been instantiated for whatever reason, we create a new object of that type
+				/// and continue the population of the object
+				Set $PROPERTY(pObj, key) = $CLASSMETHOD(DataType, "%New")
+				Set subObj = $CLASSMETHOD(DataType, "%New")
+			}
+			Do ..PopulateObjectFromJSON(.subObj, value)
+		} Else {
+			/// Mismatch or unhandled types between JSON and ObjectScript Object
+			Throw ##class(%Exception.General).%New("Failed to populate message","-313",,"Mismatch of data types - cannot populate message, Parent class: " _ $CLASSNAME(pObj) _ ", Key: " _ key _ ", JSON type: " _ jsonType _ " ObjectScript type: " _ OSType _ ", ObjectScript collection: " _ CollectionType _ ", ObjectScript data type: " _ DataType _ ". JSON: " _ value.%ToJSON())
+		}
+	}
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Storage.Serial</Type>
+<Data name="MessageState">
+<Value name="1">
+<Value>ClassName</Value>
+</Value>
+<Value name="2">
+<Value>Properties</Value>
+</Value>
+<Value name="3">
+<Value>Fill</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="APTT.Definition.Messages.MessageResponse">
+<Description>
+
+The message response class for holding validators and response message
+definitions from the test definition file
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 05.08.2025
+</Description>
+<Super>APTT.Definition.Messages.Message</Super>
+<TimeChanged>67649,41191.8969761</TimeChanged>
+<TimeCreated>67649,41191.8969761</TimeCreated>
+
+<Parameter name="MESSAGECLASS">
+<Default>%Persistent</Default>
+</Parameter>
+
+<Property name="Validators">
+<Type>APTT.Definition.Validators.Base</Type>
+<Collection>array</Collection>
+</Property>
+
+<Property name="ResultStore">
+<Type>%String</Type>
+<Collection>array</Collection>
+</Property>
+
+<Property name="ExpectedErrors">
+<Type>%String</Type>
+<Collection>list</Collection>
+</Property>
+
+<Property name="ExpectedErrorCount">
+<Type>%Integer</Type>
+<InitialExpression>0</InitialExpression>
+</Property>
+
+<Method name="%JSONNew">
+<Description>
+For some reason the parent object is passed into p1
+Ensure the "response" field is the %JSONFIELDNAME of Interaction.MessageRequest</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pJSON:%DynamicObject,pParent:%RegisteredObject</FormalSpec>
+<ReturnType>%RegisteredObject</ReturnType>
+<Implementation><![CDATA[
+	#dim responseJSON As %DynamicObject
+	Set responseJSON = pJSON.response
+	If (responseJSON = "") {
+		Throw ##class(%Exception.General).%New("Invalid JSON","-11",,"The 'response' property does not exist for interaction")
+	}
+
+	/// Create a new message 
+	Set message = ##super(responseJSON, pParent)
+
+	/// If any properties have validators attached, parse them and create the validator
+	If (responseJSON.validators) {
+		#dim validators As %DynamicObject
+		Set validators = responseJSON.validators
+
+		Set iter = validators.%GetIterator()
+	
+		/// Loop through all validators for this response
+		/// and attempt to create the validator with the
+		/// options
+		While (iter.%GetNext(.key, .value, .type)) {
+			Set fieldName = key
+			Set validatorClass = "APTT.Definition.Validators." _ value.validator
+			Set validatorOptions = value.options
+
+			Try {
+				Set validator = $CLASSMETHOD(validatorClass, "%New", validatorOptions)
+			} Catch ex {
+				Write "Validator class " _ validatorClass _ " could not be instantiated " _ ex.DisplayString()
+				Throw ##class(%Exception.General).%New("Failed to initialise validator","-499",,"The validator class '" _ validatorClass _ "' could not be initialised: " _ ex.DisplayString())
+			}
+			Do message.Validators.SetAt(validator, fieldName)
+		}
+	}
+
+	/// If any storage variables have been defined, add them to the ResultStore array
+	If (responseJSON.%IsDefined("store")) {
+		#dim store As %DynamicObject
+		Set store = responseJSON.%Get("store")
+
+		Set iter = store.%GetIterator()
+
+		/// Update the result store
+		While (iter.%GetNext(.path, .varName, .type)) {
+			Do message.ResultStore.SetAt(varName, path)
+		}
+	}
+
+	If (responseJSON.%IsDefined("errors")) {
+		Set errors = responseJSON.errors
+		Set dataType = responseJSON.%GetTypeOf("errors")
+
+		If (dataType = "array") {
+			/// This is a list of known errors expected by this business host
+			Set iter = errors.%GetIterator()
+			While (iter.%GetNext(.key, .value, .type)) {
+				If (type '= "string") {
+					Throw ##class(%Exception.General).%New("Invalid data type","-420",,"'error' field in response must be an array of strings")
+				}
+
+				Do message.ExpectedErrors.Insert(value)
+			}
+
+			Set message.ExpectedErrorCount = message.ExpectedErrors.Size
+		} ElseIf (dataType = "number") {
+			Set message.ExpectedErrorCount = errors
+		} Else {
+			Throw ##class(%Exception.General).%New("Invalid data type", "-419",,"'error' field in response must be either an integer or array of strings")
+		}
+	}
+
+	Return message
+]]></Implementation>
+</Method>
+
+<Method name="ResolveDotPath">
+<Description><![CDATA[
+A recursive helper method which resolves a path in dot notation
+e.g. "Name.Addresses[0].Street" and extracts that information
+from the Response object <property>pObj</property>]]></Description>
+<FormalSpec>pPath:%String,pObj:Ens.Response</FormalSpec>
+<Implementation><![CDATA[
+	Set splitPaths = $LISTFROMSTRING(pPath,".")
+	Set curObj = pObj
+
+	For i=1:1:$LL(splitPaths) {
+		/// Default values
+		Set fieldName = $LISTGET(splitPaths, i, "")
+		Set index = ""
+		Set indexes = ""
+
+		If (fieldName [ "[") {
+			/// If the value contains square brackets, it means this is square bracket notation for a list
+			Set extractField = $LISTFROMSTRING(fieldName, "[")
+			Set fieldName = $LISTGET(extractField, 1)
+			Set indexes = $lb()
+
+			/// We loop from the 2nd position onwards to extract all the indexes
+			/// to deal with the case of multidimensional lists
+			Set pos = 2
+			While $LISTDATA(extractField, pos) {
+				Set index = $LISTGET(extractField, pos, "")
+				If index '= "" {
+					/// Each index will be in the format of 3], 4], etc..
+					/// So we need to extract the actual index by removing the "]" char at the end
+					Set indexes = $LISTUPDATE(indexes, pos - 1, 1:$EXTRACT(index, 1, *-1))
+				}
+
+				Do $I(pos)
+			}
+		}
+
+		/// Traverse the object, checking if it is an array
+		Try {
+			Set propertyValue = $PROPERTY(curObj, fieldName)
+		} Catch ex {
+			Throw ##class(%Exception.General).%New("Path resolve error","-413",,"Field '" _ fieldName _ "' not found within response object of class '" _ $CLASSNAME(pObj) _ "' while attempting to resolve path '" _ pPath _ "'")
+		}
+
+		Do ..GetPropertyDefinition($CLASSNAME(curObj), fieldName, .CollectionType, .DataType)
+
+		If CollectionType = "array" {
+			Set i = i + 1
+			Set key = $LISTGET(splitPaths, i, "")
+			If (key = "") {
+				/// If this is an array, it's represented as an object, there should not be an index being used
+				Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'","-411",,"Field " _ fieldName _ " is an array within " _ $CLASSNAME(pObj) _ " response message, a key must be specified within the path")
+			}
+
+			/// Since this is an array, we want to extract the field
+			Set curObj = propertyValue.GetAt(key)
+			If curObj = "" {
+				/// Find possible options of the key within this array
+				Set possibleOptions = ""
+				Set arrKey = propertyValue.Next("")
+				While arrKey '= "" {
+					Set possibleOptions = possibleOptions _ arrKey _ ","
+					Set arrKey = propertyValue.Next(arrKey)
+				}
+				Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'","-415",,"Field '" _ fieldName _ "' is an array within " _ $CLASSNAME(pObj) _ " response message, could not resolve key " _ key _ " within array, possible options for key: " _ possibleOptions)
+			}
+		} ElseIf CollectionType = "list" {
+			If ((indexes = "") || ($LISTLENGTH(indexes) = 0)) {
+				/// This property is a list, but no index was specified
+				Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'","-412",,"Field '" _ fieldName _ "' is a list within " _ $CLASSNAME(pObj) _ " response message, no index was specified by path -- ensure this field contains a JSON array within the JSON test definition file")
+			}
+			
+			Set iKey = 1
+			set listObj = propertyValue
+			While iKey < $LISTLENGTH(indexes) {
+				Set objClass = $CLASSNAME(curObj)
+				If (objClass = "") || '$CLASSMETHOD(objClass, "%Extends", "%Collection.AbstractList") {
+					Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'", "-413",,"Could not access indices for field '" _ fieldName _ "', this list has the incorrect number of dimensions for the given path. Dimensions resolved: " _ iKey _ ", Dimensions expected: " _ $LISTLENGTH(indexes) _ ". Please check the test definition file to ensure all lists have the correct number of sublists")
+				}
+
+				Set listObj = listObj.GetAt($LISTGET(indexes, iKey))
+
+				Do $I(iKey)
+			}
+			Set curObj = propertyValue.GetAt(index + 1)
+		} Else {
+			If (index '= "") {
+				Throw ##class(%Exception.General).%New("Path resolve error for path '" _ pPath _ "'","-412",,"Field '" _ fieldName _ "' is NOT a list within " _ $CLASSNAME(pObj) _ " response message, unknown index specified: '" _ index _ "'")
+			}
+			Set curObj = propertyValue
+		}
+	}
+
+	Return curObj
+]]></Implementation>
+</Method>
+
+<Method name="BuildAllPaths">
+<Description>
+A recursive helper method to extract all paths from a JSON object</Description>
+<FormalSpec>pJSON,*paths:%ArrayOfDataTypes,curPath=""</FormalSpec>
+<Implementation><![CDATA[
+	Set JSONClass = $CLASSNAME(pJSON)
+
+	/// Base case
+	If (JSONClass = pJSON) {
+		/// If the $CLASSNAME() returns the value itself, it means this value
+		/// is a primitive
+		Set curPath = $ZSTRIP(curPath, "<", ".")
+		Do paths.SetAt(pJSON, curPath)
+		Return
+	}
+	
+	/// Otherwise we are only dealing with arrays or objects,
+	/// we want to loop through and recursively build their paths
+	/// If dealing with Arrays we use square bracket notation [0] for indexes
+	/// and if dealing with Objects we use dot notation
+	Set jsonIter = pJSON.%GetIterator()
+	While jsonIter.%GetNext(.key, .value, .type) {
+		Set resolvedPath = key
+		If curPath '= "" {
+			/// We are not at the root
+			Set resolvedPath = curPath _ "." _ key
+		}
+
+		If ($CLASSMETHOD(JSONClass, "%Extends", "%DynamicObject")) {
+			/// This is an object
+			Set resolvedPath = curPath _ "." _ key
+		} ElseIf ($CLASSMETHOD(JSONClass, "%Extends", "%DynamicArray")) {
+			/// This is an array
+			Set resolvedPath = curPath _ "[" _ key _ "]"
+		}
+
+		Do ..BuildAllPaths(value, .paths, resolvedPath)
+	}
+]]></Implementation>
+</Method>
+
+<Method name="ValidateResponse">
+<Description><![CDATA[
+This validates the interaction to ensure the response we actually got back from
+the production (ObjectScript:<property>pMessage</property>) matches the response
+that we expected from this interaction (JSON:<property>MessageResponse</property>)
+
+May throw an error if there was a problem with validating the response
+against the expected response
+
+The default behaviour is to check all fields of the actual <property>pMessage</property>
+match the fields exactly as shown in <property>..Properties</property>, however the validators
+specified in <property>..Validators</property> will overwrite the default behaviour
+]]></Description>
+<FormalSpec><![CDATA[pMsgHeader:Ens.MessageHeader,&pStorage:%DynamicObject=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	If (pStorage = "") {
+		Set pStorage = {}
+	}
+	Set pMessage = $CLASSMETHOD(pMsgHeader.MessageBodyClassName, "%OpenId", pMsgHeader.MessageBodyId)
+	If ($CLASSNAME(pMessage) '= ..ClassName) {
+		Throw ##class(%Exception.General).%New("Invalid class","-553",,"Expected response of type '" _ ..ClassName _ "' but actual response was of type '" _ pMsgHeader.MessageBodyClassName _ "'")
+	}
+	Set JSON = ..Properties
+
+	/// We loop through the JSON defined in the testing definition
+	/// and ensure all values match, validators will override the behaviour used
+	/// for the properties. We convert each path into the dot notation path
+	/// and resolve it using <method>..ResolveDotPath</method>
+	Set jsonIter = JSON.%GetIterator()
+	Set JSONPaths = ##class(%ArrayOfDataTypes).%New()
+
+	/// Build all the paths in dot notation form for ..Properties
+	Do ..BuildAllPaths(..Properties, .JSONPaths)
+
+	/// Loop through all validators to ensure the fields exist, if they don't
+	/// throw an error to say the path specified by the validator is not valid
+	Set vPath = ..Validators.Next("")
+	While vPath '= "" {
+		If ('JSONPaths.IsDefined(vPath)) {
+			/// The path specified by the validator is non existent in the mapped paths of the 
+			/// JSON test definition
+			Throw ##class(%Exception.General).%New("Validation path '" _ vPath _ "' does not exist","-330",,"Path specified by validator is NOT a valid path. Please ensure all validators lead to an existing path within the JSON response test definition")
+		}
+		Set vPath = ..Validators.Next(vPath)
+	}
+
+	/// Loop through all storage variables and update the pStorage parameter
+	Set sPath = ..ResultStore.Next("")
+	While sPath '= "" {
+		If ('JSONPaths.IsDefined(sPath)) {
+			Throw ##class(%Exception.General).%New("Storage path '" _ sPath _ "' does not exist", "-331",,"Path specified by 'store' key is NOT a valid path. Please ensure all storage paths lead to an existing path within the JSON response test definition")
+		}
+		Set sPath = ..ResultStore.Next(sPath)
+	}
+
+	/// By this point, all paths specified in the "Validators" key exist
+
+	/// Once all paths have been created, we default to using the EqualsValidator on all paths
+	/// that do not have a custom validator set up:
+	Set path = JSONPaths.Next("")
+	While path '= "" {
+		Set expectedValue = JSONPaths.GetAt(path)
+		/// Check if the expected value is a variable (in the format ${<VAR-NAME>})
+		If (($EXTRACT(expectedValue, 1, 2) = "${") && (expectedValue [ "}")) {
+			/// Likely a variable, extract the variable name
+			Set varName = $EXTRACT(expectedValue, 3, *-1)
+			Set mIter = pStorage.%GetIterator()
+
+			If (pStorage.%IsDefined(varName)) {
+				Set varValue = pStorage.%Get(varName)
+				Set expectedValue = varValue
+			} Else {
+				Throw ##class(%Exception.General).%New("Variable does not exist","-3113",,"The variable " _ varName _ " does not exist - response message could not be validated, Path: " _ path)
+			}
+		}
+		If '..Validators.IsDefined(path) {
+			/// If no validator is specified for this path, we use the default validator
+			Set validator = ##class(APTT.Definition.Validators.EqualsValidator).%New("")
+			Do ..Validators.SetAt(validator, path)
+		}
+
+		/// Now run the validator for this path, resolving the path as needed with
+		/// the method <method>..ResolveDotPath()</method>
+		Set actualValue = ..ResolveDotPath(path, pMessage)
+		Set validator = ..Validators.GetAt(path)
+
+		/// Run the validator, will throw a validation error if one occurs
+
+		Try {
+			Set tSC = validator.Validate(expectedValue, actualValue)
+			$$$ThrowOnError(tSC)
+		} Catch ex {
+			Set ex.Data = "Failed validation on field " _ path _ ": " _ ex.DisplayString()
+			Throw ex
+		}
+
+		Set path = JSONPaths.Next(path)
+	}
+
+	/// If validation succeeded, update any storage parameters defined
+	/// in the "store" object in the original JSON. It is important we do this
+	/// AFTER the message has been validated, as there is a chance the message may not be the
+	/// expected message
+
+	/// TODO: Ideally this process needs to be cleaned up, we shouldn't have to specify the path in the
+	/// 	"properties" object if we want to store the field, we should only check the original JSON file for this path
+	/// 	similarly, we shouldn't have to specify the paths in the "properties" field if we want to perform validation,
+	///		instead these values should be inferred from the "store" and "validators" keys implicitly
+	/// e.g. currently we would have to do something like this:
+	///				"store": {
+	///					"prop1": "var1"
+	///				},
+	///				"properties": {
+	///					"prop1": "my-value"
+	///				}
+	/// but it should be enough to only need
+	///				"store": {
+	///					"prop1": "var1"
+	///				}
+	/// and similar for the "validators" property
+	
+	Set path = JSONPaths.Next("")
+	While path '= "" {
+		/// If we should store the result of this path into storage
+		If ..ResultStore.IsDefined(path) {
+			/// This path is defined by the result store, update the storage variable
+			Do pStorage.%Set(..ResultStore.GetAt(path), ..ResolveDotPath(path, pMessage))
+		}
+		Set path = JSONPaths.Next(path)
+	}
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Storage.Serial</Type>
+<Data name="MessageState">
+<Value name="1">
+<Value>ClassName</Value>
+</Value>
+<Value name="2">
+<Value>Properties</Value>
+</Value>
+<Value name="3">
+<Value>Validators</Value>
+</Value>
+<Value name="4">
+<Value>ExpectedErrors</Value>
+</Value>
+<Value name="5">
+<Value>ExpectedErrorCount</Value>
+</Value>
+<Value name="6">
+<Value>ResultStore</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="APTT.Definition.TestCase">
+<Description>
+
+A test case is targeted at a single component within the production. It takes a list of interactions which are sent to the component
+and the responses compared/validated
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 05.08.2025
+</Description>
+<Super>%SerialObject,%JSON.Adaptor</Super>
+<TimeChanged>67649,41191.7880701</TimeChanged>
+<TimeCreated>67649,41191.7880701</TimeCreated>
+
+<Parameter name="%JSONENABLED">
+<Default>1</Default>
+</Parameter>
+
+<Property name="TargetHostName">
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="name"/>
+<Parameter name="MAXLEN"/>
+</Property>
+
+<Property name="TargetHostClass">
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="class"/>
+<Parameter name="MAXLEN"/>
+</Property>
+
+<Property name="Interactions">
+<Type>APTT.Definition.Interaction</Type>
+<Collection>list</Collection>
+<Parameter name="%JSONFIELDNAME" value="interactions"/>
+</Property>
+
+<Storage name="Default">
+<Type>%Storage.Serial</Type>
+<State>TestCaseState</State>
+<StreamLocation>^APTT.Definition.TestCaseS</StreamLocation>
+<Data name="TestCaseState">
+<Value name="1">
+<Value>TargetHostName</Value>
+</Value>
+<Value name="2">
+<Value>TargetHostClass</Value>
+</Value>
+<Value name="3">
+<Value>Interactions</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="APTT.Definition.TestSuite">
+<Description>
+
+A test suite is the foundation of a test definition file. It takes in a list of test cases aimed at various
+components within the production. It is recommended to separate tests on a per-component basis, having 1 file
+testing 1 component.
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 05.08.2025
+</Description>
+<Super>%SerialObject,%JSON.Adaptor</Super>
+<TimeChanged>67649,41191.7895074</TimeChanged>
+<TimeCreated>67649,41191.7895074</TimeCreated>
+
+<Property name="SourceFile">
+<Type>%String</Type>
+<Parameter name="%JSONINCLUDE" value="none"/>
+</Property>
+
+<Property name="TargetProduction">
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="production"/>
+</Property>
+
+<Property name="TargetNamespace">
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="namespace"/>
+</Property>
+
+<Property name="TestCases">
+<Type>APTT.Definition.TestCase</Type>
+<Collection>list</Collection>
+<Parameter name="%JSONFIELDNAME" value="tests"/>
+</Property>
+
+<Storage name="Default">
+<Type>%Storage.Serial</Type>
+<State>TestSuiteState</State>
+<StreamLocation>^APTT.Definition.TestSuiteS</StreamLocation>
+<Data name="TestSuiteState">
+<Value name="1">
+<Value>SourceFile</Value>
+</Value>
+<Value name="2">
+<Value>TargetProduction</Value>
+</Value>
+<Value name="3">
+<Value>TargetNamespace</Value>
+</Value>
+<Value name="4">
+<Value>TestCases</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="APTT.Definition.Validators.Base">
+<Description>
+
+Base validator class
+
+Each validator can take custom options to customise the behaviour of the validator, e.g. use regex, search lists etc.
+
+Inherit from the base class and implement the OnValidate() method. Modify the VALIDOPTIONS parameter with a comma separated list of options the validator takes
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 04.08.2025
+</Description>
+<Abstract>1</Abstract>
+<Super>%RegisteredObject,%SerialObject</Super>
+<TimeChanged>67649,41192.0413122</TimeChanged>
+<TimeCreated>67649,41192.0413122</TimeCreated>
+
+<Parameter name="VALIDOPTIONS">
+<Description>
+A comma separated list of valid options this validator takes, override in your subclass</Description>
+</Parameter>
+
+<Property name="Options">
+<Type>%DynamicObject</Type>
+</Property>
+
+<Method name="%OnNew">
+<FormalSpec>pOptions:%DynamicObject</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set ..Options = pOptions
+
+	If (pOptions = "") {
+		Return $$$OK
+	}
+	
+	/// Check only the valid options appear in the options OBJECT
+	Set jsonIter = pOptions.%GetIterator()
+	
+	Set validOptionsList = $LISTFROMSTRING(..#VALIDOPTIONS, ",")
+
+	While jsonIter.%GetNext(.key, .value, .type) {
+		If ($LISTFIND(validOptionsList, key) = 0) {
+			Throw ##class(%Exception.General).%New("Invalid option for validator '" _ $CLASSNAME() _ "'","-438",,"'" _ key _ "' is not a valid option for this validator. Valid options: " _ $LISTTOSTRING(validOptionsList, ", "))
+		}
+	}
+	
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="ValidationError">
+<FormalSpec>pText:%String</FormalSpec>
+<Implementation><![CDATA[
+	Throw ##class(%Exception.General).%New(
+			"ValidationError for " _ $CLASSNAME(),
+			"-2000",,
+			"Validation error occurred for " _ $CLASSNAME() _ ": " _ pText)
+]]></Implementation>
+</Method>
+
+<Method name="Validate">
+<FormalSpec>pExpectedValue:%String(MAXLEN=""),pActualValue:%String(MAXLEN="")</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	If ($$$ISOK(..OnValidate(pExpectedValue, pActualValue))) {
+		Return $$$OK
+	} Else {
+		Do ..ValidationError("Validator Failed on validation, expected value '" _ pExpectedValue _ "' but got '" _ pActualValue _ "'")
+		Return 0
+	}
+]]></Implementation>
+</Method>
+
+<Method name="OnValidate">
+<Description>
+Override this method to validate the value, should return a value of 0 (failure) or 1 (success)</Description>
+<Abstract>1</Abstract>
+<FormalSpec>pExpectedValue:%String(MAXLEN=""),pActualValue:%String(MAXLEN="")</FormalSpec>
+<ReturnType>%Status</ReturnType>
+</Method>
+
+<Method name="hasOption">
+<Description>
+Options methods</Description>
+<FormalSpec>pOption:%String</FormalSpec>
+<Implementation><![CDATA[	Return ..Options.%IsDefined(pOption)
+]]></Implementation>
+</Method>
+
+<Method name="getOption">
+<FormalSpec>pOption:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	If ('..hasOption(pOption)) {
+		Do ..ValidationError("The option " _ pOption _ " is required for this validator")
+	}
+
+	Return ..Options.%Get(pOption)
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="APTT.Definition.Validators.EqualsValidator">
+<Description>
+
+The default and most basic validator.
+
+It checks to ensure the expected value and the actual value match, no options are expected
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 01.08.2025
+</Description>
+<Super>APTT.Definition.Validators.Base</Super>
+<TimeChanged>67649,41191.8797251</TimeChanged>
+<TimeCreated>67649,41191.8797251</TimeCreated>
+
+<Method name="OnValidate">
+<FormalSpec>pExpectedValue:%String(MAXLEN=""),pActualValue:%String(MAXLEN="")</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	If (pActualValue = pExpectedValue) {
+		Return $$$OK
+	}
+
+	Do ..ValidationError("Validation error with EqualsValidator - expected '" _ pExpectedValue _ "' but got '" _ pActualValue _ "'")
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="APTT.Definition.Validators.TextValidator">
+<Description>
+
+A validator for TextFields. This validator takes various options to perform different text validations. Each option adds to the validation checks.
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 18.08.2025
+</Description>
+<Super>APTT.Definition.Validators.Base</Super>
+<TimeChanged>67649,41191.8927946</TimeChanged>
+<TimeCreated>67649,41191.8927946</TimeCreated>
+
+<Parameter name="VALIDOPTIONS">
+<Default>equals,contains,beginsWith,endsWith,caseSensitive,notEquals,base64</Default>
+</Parameter>
+
+<Method name="OnValidate">
+<Description>
+Valid options for this TextValidator:
+"options": {
+	"contains": ??,
+	"equals": ??,
+	"beginsWith": ??,
+	"endsWith": ??,
+	"caseSensitive": "true", "false",
+	"base64": ?? # A base64 value this field should encode to
+}
+
+Can specify any combination of the above and they will all be checked
+/// Override this method to validate the value, should return a value of 0 (failure) or 1 (success)</Description>
+<FormalSpec>pExpectedValue:%String(MAXLEN=""),pActualValue:%String(MAXLEN="")</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set caseSensitive = 1
+	If ..hasOption("caseSensitive") {
+		Set caseSensitive = ..getOption("caseSensitive")
+	}
+
+	If (..hasOption("equals")) {
+		Do ..ValidateText("equals", pActualValue, ..getOption("equals"), caseSensitive)
+	}
+	If (..hasOption("contains")) {
+		Do ..ValidateText("contains", pActualValue, ..getOption("contains"), caseSensitive)
+	}
+
+	If (..hasOption("beginsWith")) {
+		Do ..ValidateText("beginsWith", pActualValue, ..getOption("beginsWith"), caseSensitive)
+	}
+
+	If (..hasOption("endsWith")) {
+		Do ..ValidateText("endsWith", pActualValue, ..getOption("endsWith"), caseSensitive)
+	}
+	
+	If (..hasOption("notEquals")) {
+		Do ..ValidateText("notEquals", pActualValue, ..getOption("notEquals"), caseSensitive)
+	}
+
+	If (..hasOption("base64")) {
+		Do ..ValidateText("base64", pActualValue, ..getOption("base64"), 1)
+	}
+
+	Return $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="ValidateText">
+<FormalSpec>pMode:%String,pText:%String,pAuxText:%String,pSensitive:%Boolean</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	If 'pSensitive {
+		Set pText = $ZCONVERT(pText, "l")
+		Set pAuxText = $ZCONVERT(pAuxText, "l")
+	}
+
+	Set valid = 0
+	If pMode = "equals" {
+		Set valid = (pText = pAuxText)
+	} ElseIf pMode = "contains" {
+		Set valid = (pText [ pAuxText)
+	} ElseIf (pMode = "beginsWith") && ($L(pAuxText) <= $L(pText)) {
+		Set valid = ($EXTRACT(pText, 0, $L(pAuxText)) = pAuxText)
+	} ElseIf (pMode = "endsWith") && ($L(pAuxText) <= $L(pText)) {
+		Set valid = ($EXTRACT(pText, *-($L(pAuxText) - 1), *) = pAuxText)
+	} ElseIf (pMode = "notEquals") {
+		Set valid = (pText '= pAuxText)
+	} ElseIf (pMode = "base64") {
+		Set valid = ($System.Encryption.Base64Encode(pText) = pAuxText)
+	}
+
+	If valid = 0 {
+		Do ..ValidationError("Failed validation with mode '" _ pMode _ "', text = '" _ pText _ "', auxText = '" _ pAuxText _ "' with case sensitive mode = " _ pSensitive)
+	}
+
+	Return 1
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="APTT.Parser">
+<Description>
+
+A Parser utility for loading test definition .JSON files
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 04.08.2025
+</Description>
+<TimeChanged>67649,41191.8289601</TimeChanged>
+<TimeCreated>67649,41191.8289601</TimeCreated>
+
+<Method name="LoadFileAsTestSuite">
+<Description>
+
+Parses a file using the test definition JSON model
+</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pFilepath:%String</FormalSpec>
+<ReturnType>APTT.Definition.TestSuite</ReturnType>
+<Implementation><![CDATA[
+	If ('##class(%File).Exists(pFilepath)) {
+		Throw ##class(%Exception.General).%New("File does not exist",2,,"The test definition file '" _ pFilepath _ "' does not exist")
+		Return ""
+	}
+
+	Set file = ##class(%File).%New(pFilepath)
+	Set tSC = file.Open("R")
+	$$$ThrowOnError(tSC)
+
+	Set data = ""
+
+	while ('file.AtEnd) {
+		Set data = data _ file.Read(,.tSC)
+		$$$ThrowOnError(tSC)
+	}
+
+	Do file.Close()
+
+	Set testSuite = ##class(APTT.Definition.TestSuite).%New()
+	Set testSuite.SourceFile = pFilepath
+	Set tSC = testSuite.%JSONImport(data)
+	$$$ThrowOnError(tSC)
+
+	Return testSuite
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="APTT.ProductionTester">
+<Description><![CDATA[
+
+Auwais's Production Testing Tool
+
+The main entry point for the APTT utility
+
+This class is the main class that enables testing of the production. It will load all of your
+test definition files and play back the interactions stored within the JSON file
+
+All messages will automatically be created on the fly, you do not need to
+extend your request or response messages from the %JSON.Adaptor class
+
+To run this tester:
+	- Create a directory with all of your test definition files
+	- Run with
+		Do ##class(APTT.ProductionTester).Run("/path/to/your/test/definitions/directory", "<your production name>")
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 0.6
+]]></Description>
+<Super>%UnitTest.TestProduction</Super>
+<TimeChanged>67649,41191.7349592</TimeChanged>
+<TimeCreated>67649,41191.7349592</TimeCreated>
+
+<Parameter name="PRODUCTION">
+<Description>
+The production to test, this is determined at Runtime so a default value of "None" is specified</Description>
+<Type>CONFIGVALUE</Type>
+<Default>None</Default>
+</Parameter>
+
+<Parameter name="IGNOREPRODUCTIONERRORS">
+<Description>
+We want to perform custom error handling for production errors</Description>
+<Default>1</Default>
+</Parameter>
+
+<Property name="Suites">
+<Type>APTT.Definition.TestSuite</Type>
+<Collection>list</Collection>
+</Property>
+
+<Property name="ExpectedErrors">
+<Type>%Integer</Type>
+<InitialExpression>0</InitialExpression>
+</Property>
+
+<Property name="AccountedErrors">
+<Type>%Integer</Type>
+<InitialExpression>0</InitialExpression>
+</Property>
+
+<Property name="CheckedBaseLogID">
+<Type>%Integer</Type>
+<InitialExpression>-1</InitialExpression>
+</Property>
+
+<Property name="CheckedBaseMessageHeaderID">
+<Type>%Integer</Type>
+<InitialExpression>-1</InitialExpression>
+</Property>
+
+<Property name="Storage">
+<Type>%DynamicObject</Type>
+</Property>
+
+<Method name="ColourText">
+<FormalSpec>pText:%String,pColour:%String="black"</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	Set cCode = $CASE(
+		pColour,
+		"red":"31",
+		"green":"32",
+		"black":"30",
+		"blue":"34",
+		1:"30"
+	)
+
+	Return $c(27) _ "[" _ cCode _ "m" _ pText _ $c(27) _ "[m"
+]]></Implementation>
+</Method>
+
+<Method name="LogColourMessage">
+<Description>
+Logs a message in a specific colour
+supported colours:
+- red
+- green
+- black
+- blue
+</Description>
+<FormalSpec>pText:%String,pColour:%String="black"</FormalSpec>
+<Implementation><![CDATA[	Do ..LogMessage(..ColourText(pText, pColour))
+]]></Implementation>
+</Method>
+
+<Method name="Run">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pFileDirectory:%String,pProduction:%String,pExpectTests:%Boolean=0,pExitOSProcess:%Boolean=0</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	/// Tool specific globals
+	Kill ^APTT
+	Set ^APTT.TestDefinitionDirectory = pFileDirectory
+	Set ^APTT.Runtime = $ZDT($H)
+	Set ^APTT.ExpectTests = pExpectTests
+	Set ^APTT.Success = 0
+	Set ^APTT.TotalTests = 0
+	Set ^APTT.TestsPassed = 0
+	Set ^APTT.TestsRan = 0
+	Set ^APTT.ExpectedErrors = 0
+	Set ^APTT.AccountedErrors = 0
+
+	Set dir = ##class(%File).%New(pFileDirectory)
+	If ('##class(%File).DirectoryExists(pFileDirectory)) {
+		Write "[ERROR]: " _ "Directory '" _ pFileDirectory _ "' does not exist.. exiting"
+		Write:pExitOSProcess=1 !,"Exiting with process code "_^APTT.Success
+		Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
+		Return $System.Status.Error("InitFailed", "Specified directory '" _ pFileDirectory _ "' does not exist")
+	}
+
+	Set ^UnitTestRoot = pFileDirectory
+
+	/// Update runtime parameters
+	/// Update the PRODUCTION parameter at runtime
+	Set tSC = $System.OBJ.UpdateConfigParam($CLASSNAME(), "PRODUCTION", pProduction)
+	$$$ThrowOnError(tSC)
+	
+	// Run the super Run() method
+	/// The tSC returned by the Super.Run() method is unrelated to whether the tests passed or not, so we cannot use it
+	/// to reliably determine whether all tests passed or not, which is why we set the globals above.
+	Set tSC = ##super()
+	
+	Write !,"----- Summary -----",!
+	Write "- Total tests: " _ ^APTT.TotalTests,!
+	Write "- Tests ran: " _ ^APTT.TestsRan,!
+	
+	Set percentPassed = 0
+	Set:^APTT.TestsRan>0 percentPassed = $NUMBER(((^APTT.TestsPassed / ^APTT.TotalTests) * 100), 0)
+	Write "- Tests passed: " _ ^APTT.TestsPassed _ " / " _ ^APTT.TotalTests _ "(" _ percentPassed _ "%)",!
+	Write "- Errors Accounted For: " _ ^APTT.AccountedErrors _ " / " _ ^APTT.ExpectedErrors,!
+
+	Do:pExitOSProcess=1 $System.Process.Terminate(,^APTT.Success)
+	If ($GET(^APTT.Success, "") = 1) {
+		Return $$$OK
+	} Else {
+		Return ..Error("Tests were not successful")
+	}
+]]></Implementation>
+</Method>
+
+<Method name="OnBeforeProductionStart">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set testDefinitionDirectory = $GET(^APTT.TestDefinitionDirectory, "")
+	If (testDefinitionDirectory = "") {
+		Do $$$AssertFailure("No test definition directory was specified")
+	}
+
+	Set ..Storage = {}
+
+	Do ..LogColourMessage("-->Loading test definition files from directory '" _ testDefinitionDirectory _ "'", "blue")
+	Set tSC = ..LoadTestDefinitionFiles(testDefinitionDirectory)
+
+	Set ..CheckedBaseMessageHeaderID = ..GetLastMessageHeaderID()
+
+	Do ..LogColourMessage("-->Last Message Header ID set to " _ ..CheckedBaseMessageHeaderID, "blue")
+	Return:'$$$ISOK(tSC) tSC
+
+
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OnAfterProductionStart">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set sKey = ..Suites.Next("")
+	Set ok = 1
+	While sKey '= "" {
+		Try {
+			Set testSuite = ..Suites.GetAt(sKey)
+			Set st = ..RunOneTestSuite(testSuite)
+			Set:'$$$ISOK(st) ok = 0
+		} Catch ex {
+			Set ok = 0
+			Do ..LogColourMessage("-->" _ ex.DisplayString(), "red")
+		}
+		Set sKey = ..Suites.Next(sKey)
+	}
+
+	Return:ok=0 $System.Status.Error(5001, ..ColourText("One or more tests have failed", "red"))
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OnAfterProductionStop">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Do ..LogColourMessage("Total of " _ ^APTT.TestsPassed _ "/" _ ^APTT.TotalTests _ " tests were successful out of " _ ^APTT.TestsRan _ " tests ran", "blue")
+
+	Do $$$AssertEquals(^APTT.TestsPassed, ^APTT.TotalTests)
+	Do $$$AssertEquals(^APTT.TestsRan, ^APTT.TotalTests)
+	
+	If ((^APTT.TestsPassed = ^APTT.TotalTests) && (^APTT.TestsRan = ^APTT.TotalTests)) {
+		/// Check all tests passed and all tests ran before setting the ^APTT.Success global, as this global is the
+		/// most important global which dictates whether the tests passed or not
+		Do ..LogColourMessage("All tests ran and were successful", "green")
+		Set ^APTT.Success = 1
+	} Else {
+		Set ^APTT.Success = 0
+	}
+
+	Write ..Storage.%ToJSON()
+
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="LoadTestDefinitionFiles">
+<Description><![CDATA[
+Run the parser for a directory of .JSON test files
+These files MUST end in ".json" to be picked up by this test utility
+<property>pFileDirectory</property> - The directory in the file system which holds the .json test definitions]]></Description>
+<FormalSpec>pFileDirectory:%String</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set stmt = ##class(%SQL.Statement).%New()
+	Set st = stmt.%PrepareClassQuery("%File", "FileSet")
+	Return:'$$$ISOK(st) st
+
+	Set rSet = stmt.%Execute(pFileDirectory, "*.json")
+	If (rSet.%SQLCODE '= 0) {
+		Set tSC = $System.Status.Error("File Query ERROR", "Could not query directory for files: '" _ pFileDirectory _ "'")
+		Do ..LogErrors(tSC, "File query failed, SQL CODE=" _ rSet.%SQLCOD _ ", MESSAGE=" _ rSet.%Message)
+		Return tSC
+	}
+
+	While rSet.%Next() {
+		Try {
+			Set path = ##class(%File).NormalizeFilename(rSet.%Get("Name"))
+			Set filename = ##class(%File).GetFilename(path)
+			Do ..LogColourMessage("---->Loading " _ filename _ "...", "blue")
+			Set testSuite = ##class(APTT.Parser).LoadFileAsTestSuite(path)
+
+			Do ..LogColourMessage("------>Loaded", "green")
+
+			/// Throw errors if any of the test definition files have a different target namespace or production
+			Throw:testSuite.TargetNamespace'=$NAMESPACE ##class(%Exception.General).%New("Incorrect namespace","-93",,"The namespace specified '" _ testSuite.TargetNamespace _ "' is different to the selected namespace '" _ $NAMESPACE _ "'. Ensure all test definition files have the same target namespace")
+			Throw:testSuite.TargetProduction'=..#PRODUCTION ##class(%Exception.General).%New("Incorrect production","-93",,"The production specified '" _ testSuite.TargetProduction _ "' is different to the selected production '" _ ..#PRODUCTION _ "'. Ensure all test definition files have the same target production")
+
+			Do ..Suites.Insert(testSuite)
+
+			/// TODO: Find a more elegant way to obtain a total test count, maybe even move this whole method to the
+			/// Count how many test cases there are
+			Set tKey = testSuite.TestCases.Next("")
+			While tKey '= "" {
+				Do $I(^APTT.TotalTests, testSuite.TestCases.GetAt(tKey).Interactions.Size)
+				Set tKey = testSuite.TestCases.Next(tKey)
+			}
+		} Catch ex {
+			Set tSC = $System.Status.Error(5001, ex.DisplayString())
+			Return tSC
+		}
+	}
+	
+	If ..Suites.Size = 0 {
+		Do ..LogMessage("-->No test suites found")
+		Return:^APTT.ExpectTests=1 ..Error("Tests were expected, however none were loaded")
+	} Else {
+		Do ..LogColourMessage("-->" _ ..Suites.Size _ " test suites loaded", "blue")
+		Do ..LogColourMessage("-->Identified " _ ^APTT.TotalTests _ " tests to run", "blue")
+	}
+
+	Return $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GetLastMessageHeaderID">
+<Implementation><![CDATA[
+	&sql(SELECT ID INTO :lastMessageHeaderID FROM Ens.MessageHeader ORDER BY id DESC)
+    If (SQLCODE < 0) {
+		Write "SQLCODE error ",SQLCODE," ",%msg 
+		Quit
+	} ElseIf (SQLCODE = 100) {
+		Return 0
+	}
+
+	Return lastMessageHeaderID
+]]></Implementation>
+</Method>
+
+<Method name="ExecuteActions">
+<FormalSpec>pActionString:%String</FormalSpec>
+<Implementation><![CDATA[
+	Return:pActionString=""
+
+	Set actions = $LISTFROMSTRING(pActionString, ",")
+
+	For i=1:1:$LL(actions) {
+		Set action = $LISTGET(actions, i)
+		Set actionName = $PIECE(action, ":", 1, 1)
+		Set actionValue = $PIECE(action, ":", 2, 2)
+		If (actionName = "wait") {
+			Do ..LogColourMessage("------>Performing action: waiting for " _ actionValue _ " seconds", "blue")
+			Hang actionValue
+		} ElseIf (actionName = "stop") {
+			Do ..LogColourMessage("------>Performing action: stopping item " _ actionValue, "blue")
+			Set tSC = ##class(Ens.Director).EnableConfigItem(actionValue, 0, 0)
+			$$$ThrowOnError(tSC)
+			Set tSC = ##class(Ens.Director).UpdateProduction(10, 1, 0)
+			$$$ThrowOnError(tSC)
+		} ElseIf (actionName = "start") {
+			Do ..LogColourMessage("------>Performing action: starting item " _ actionValue, "blue")
+			Set tSC = ##class(Ens.Director).EnableConfigItem(actionValue, 1, 0)
+			$$$ThrowOnError(tSC)
+			Set tSC = ##class(Ens.Director).UpdateProduction(10, 1, 0)
+			$$$ThrowOnError(tSC)
+		} Else {
+			Throw ##class(%Exception.General).%New("Unknown action: " _ actionName _ " given",,"-30422","The selected action does not exist.")
+		}
+	}
+]]></Implementation>
+</Method>
+
+<Method name="GetUnixTimestamp">
+<Implementation><![CDATA[	Return $ZDT($H, -2)
+]]></Implementation>
+</Method>
+
+<Method name="VerifyAsyncMessages">
+<FormalSpec>pAsyncMessages:%ListOfObjects</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set verifiedMessageHeaderIds = ""
+	Set totalAsyncMessages = 0
+
+	Set ..CheckedBaseMessageHeaderID = ..GetLastMessageHeaderID()
+	Set baseMessageHeaderID = ..CheckedBaseMessageHeaderID
+	For i=1:1:pAsyncMessages.Size {
+		#dim asyncMessage As APTT.Definition.Messages.AsyncMessage
+		Set asyncMessage = pAsyncMessages.GetAt(i)
+		
+		If (asyncMessage.Source = "") || (asyncMessage.Target = "") {
+			/// If source or target is empty, likely the it is a dud object
+			/// that was inserted on import
+			Continue
+		}
+
+		/// We keep our own count of async messages, since pAsyncMessages.Size is unreliable due to dud objects that were inserted purposefully
+		Set totalAsyncMessages = totalAsyncMessages + 1
+		Set timeout = asyncMessage.Timeout
+		If (timeout < 1) || (timeout > 600) {
+			Throw ##class(%Exception.General).%New("Timeout too longer",,"-30411","A timeout of " _ timeout _ " is unacceptable for an async message. Ensure the timeout is between 1 second and 600 seconds")
+		}
+
+		Set messageVerified = 0
+		Set startTime = ..GetUnixTimestamp()
+		Set endTime = ..GetUnixTimestamp() + timeout
+		Do ..LogColourMessage("------>Waiting up to " _ timeout _ " seconds for async message", "blue")
+		
+		Set failedHeaderIDs = ""
+
+		While ..GetUnixTimestamp() < endTime {
+			/// Search all messages that could validate this method
+			Set sql = ##class(%SQL.Statement).%ExecDirect(,"SELECT id FROM Ens.MessageHeader WHERE id > ? AND MessageBodyClassName != ''", baseMessageHeaderID)
+
+			/// Execute the actions intended to be executed before the async tests
+			Do ..ExecuteActions(asyncMessage.Before)
+			While sql.%Next() {
+				Set headerID = sql.%Get("id")
+				If ($LISTFIND(failedHeaderIDs, headerID)) {
+					/// Skip the comparison, since we have already compared these messages
+					Hang 1
+					Continue
+				}
+				Set messageHeader = ##class(Ens.MessageHeader).%OpenId(headerID)
+				Set valid = 0
+				
+				If (messageHeader.SourceConfigName = asyncMessage.Source) && (messageHeader.TargetConfigName = asyncMessage.Target) {
+					Do ..LogColourMessage("-------->Validating message header with ID " _ headerID _ " against async message", "blue")
+					Try {
+						Set valid = asyncMessage.ValidateResponse(messageHeader, ..Storage)
+					} Catch ex {
+						Set messageVerified = 0
+						/// Print for informational purposes
+						Do ..LogColourMessage("---------->Validation failed", "black")
+						/// For debugging purposes:
+						#; Do ..LogColourMessage("------------>"_ex.DisplayString(), "red")
+						Do ..LogColourMessage("-------->Continuing to wait for " _ (endTime - ..GetUnixTimestamp()) _ " seconds..", "blue")
+						Set $LIST(failedHeaderIDs, *+1) = headerID
+					}
+				} Else {
+					Set $LIST(failedHeaderIDs, *+1) = headerID
+				}
+
+				If ($$$ISOK(valid) && '$LISTFIND(verifiedMessageHeaderIds, headerID)) {
+					Set $LIST(verifiedMessageHeaderIds, *+1) = $lb(headerID)
+					Set messageVerified = 1
+					Quit
+				}
+			}
+
+			Quit:messageVerified
+			
+			Do ..ExecuteActions(asyncMessage.After)
+			Hang 1
+		}
+
+
+		If (messageVerified) {
+			Do ..LogColourMessage("---------->Async message successfully verified after " _ (..GetUnixTimestamp() - startTime) _ " seconds", "green")
+		} Else {
+			Do ..LogColourMessage("---------->Async message failed to be detected after " _ (..GetUnixTimestamp() - startTime) _ " seconds", "red")
+		}
+	}
+
+	If ($LISTLENGTH(verifiedMessageHeaderIds) = totalAsyncMessages) {
+		Return $$$OK
+	} Else {
+		Return $System.Status.Error("AsyncMessagesFailed", "Failed to verify all async messages")
+	}
+]]></Implementation>
+</Method>
+
+<Method name="RunOneTestSuite">
+<FormalSpec>pTestSuite:APTT.Definition.TestSuite</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	/// TODO:
+	/// 	KEY POINT: USE ..LOGERRORS FOR NON-FATAL ERRORS OTHERWISE RETURN AN ERROR
+	///				   STATUS CODE IF THE ERROR IS FATAL
+	Do ..LogColourMessage("Running test definition file '" _ pTestSuite.SourceFile _ "'", "blue")
+	
+	/// Attempt to run all messages within this production
+	Set tc = pTestSuite
+	For i=1:1:pTestSuite.TestCases.Size {
+		#dim testCase As APTT.Definition.TestCase
+		Set testCase = pTestSuite.TestCases.GetAt(i)
+		
+		Set targetHostName = testCase.TargetHostName
+		Set targetHostClass = testCase.TargetHostClass
+
+		Do ..LogColourMessage("-->Starting tests for host '" _ targetHostName _ "'", "blue")
+		
+		/// Attempt to find the target host this test is for
+		Set prod = ##class(Ens.Config.Production).%OpenId(..#PRODUCTION,,.tSC)
+		Do $$$AssertStatusOK(tSC)
+
+		Set itemFound = ""
+		For i=1:1:prod.Items.Count() {
+			#dim item As Ens.Config.Item
+			Set item = prod.Items.GetAt(i)
+			If ((item.Name = targetHostName) && (item.ClassName = targetHostClass)) {
+				Set itemFound = item
+			}
+		}
+
+		If (itemFound = "") {
+			Throw ##class(%Exception.General).%New("Item not found", "-193",,"Business host named '" _ targetHostName _ "' with class '" _ targetHostClass _ "' not found")
+		}
+
+		#dim itemFound As Ens.Config.Item
+		If ('itemFound.Enabled) {
+			Throw ##class(%Exception.General).%New("Item not enabled", "-15",,"Business host '" _ targetHostName _ "' with class '" _ targetHostClass _ "' has not been enabled within production")
+		}
+
+		Do $$$AssertNotEquals(itemFound, "")
+		Do $$$AssertTrue(itemFound.Enabled)
+		/// By this point, the Config item is valid, exists within the production and is enabled
+
+		/// Run the interactions within the TestCase
+		Set interactions = testCase.Interactions
+
+		For j=1:1:testCase.Interactions.Size {
+			#dim interaction As APTT.Definition.Interaction
+			Set interaction = testCase.Interactions.GetAt(j)
+
+			If (interaction.Name '= "") {
+				Do ..LogColourMessage("---->Running interaction named '" _ interaction.Name _ "'", "blue")
+			} Else {
+				Do ..LogColourMessage("---->Running interaction with index " _ j, "blue")
+			}
+			Do $I(^APTT.TestsRan, 1)
+
+			/// Generate the Ens.Request message we will be sending into the
+			/// production
+			Try {
+				Do ..LogMessage("------>Generating request message " _ interaction.MessageRequest.ClassName _ "...")
+				Set requestMessage = interaction.MessageRequest.GenerateMessageRequest(..Storage)
+
+				/// Send the message into the production
+				Do ..LogMessage("-------Sending request to " _ targetHostName)
+				Set tSC = ..SendRequest(targetHostName, requestMessage, .responseMessage, 1)
+				Do:'$$$ISOK(tSC) ..LogMessage("Errors occurred during interaction, validating errors...")
+
+				/// Perform error handling to ensure all errors in the production are accounted for
+				Set tSC = ..CheckInteractionErrors(interaction)
+				$$$ThrowOnError(tSC)
+				
+				/// Now validate the response against what we expect
+				Set responseClassName = $CLASSNAME(responseMessage)
+				
+				If (responseClassName '= interaction.MessageResponse.ClassName) {
+					/// We did not expect a response here
+					Throw ##class(%Exception.General).%New("Response class mismatch","-3111",,"Expected a response of type '" _ interaction.MessageResponse.ClassName _ "' but received '" _ responseClassName _ "'")
+				}
+
+				/// Validate the response if one was expected			
+				If (responseClassName '= "") {
+					Set baseMessageHeaderID = ..CheckedBaseMessageHeaderID
+					Set messageBodyID = responseMessage.%Id()
+					&sql(SELECT ID INTO :responseMessageHeaderID FROM Ens.MessageHeader WHERE MessageBodyClassName = :responseClassName AND MessageBodyId = :messageBodyID AND id > :baseMessageHeaderID ORDER BY id DESC)
+					IF SQLCODE<0 {WRITE "SQLCODE error ",SQLCODE," ",%msg  QUIT}
+					Set validationSC = interaction.MessageResponse.ValidateResponse(##class(Ens.MessageHeader).%OpenId(responseMessageHeaderID), ..Storage)
+					$$$ThrowOnError(validationSC)
+
+					Do $$$AssertStatusOK(validationSC)
+				} Else {
+					Set validationSC = $$$OK
+				}
+
+				Do ..LogColourMessage("------>Sync Response message is valid", "green")
+
+				/// Check if any Async messages are expected after this interaction
+				/// and loop through them, waiting to verify them
+				Set asyncSC = ..VerifyAsyncMessages(interaction.AsyncMessages)
+				$$$ThrowOnError(asyncSC)
+				Do $$$AssertStatusOK(asyncSC)
+
+				Do:$$$ISOK(validationSC)&&$$$ISOK(asyncSC) $I(^APTT.TestsPassed, 1)
+			} Catch ex {
+				Set interactionName = "Interaction index " _ j
+				Set:interaction.Name'="" interactionName = interaction.Name
+
+				Do ..LogErrors(..Error(..ColourText(ex.DisplayString(), "red")), "File '" _ ##class(%File).GetFilename(pTestSuite.SourceFile) _ "'" _ "->" _ testCase.TargetHostName _ "->" _ interactionName)
+				Do $$$AssertFailure("Interaction Test Failed")
+			}
+		}
+	}
+
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="CheckInteractionErrors">
+<Description>
+This method checks the errors since the last check to ensure the errors
+that were expected from this interaction are accounted for</Description>
+<FormalSpec>pInteraction:APTT.Definition.Interaction</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Write "Checking interaction errors.."
+	Do ..LogColourMessage("Running CheckInteractionErrors()", "blue")
+	If (..CheckedBaseLogID = -1) {
+		/// If base log ID not initialized, set to production base default
+		Set ..CheckedBaseLogID = ..BaseLogId
+	}
+
+	Set expectedErrCnt = pInteraction.MessageResponse.ExpectedErrorCount
+	Set expectedErrList = pInteraction.MessageResponse.ExpectedErrors
+
+	Do $I(^APTT.ExpectedErrors, expectedErrCnt)
+
+	Do ..GetEventLog("error","",..CheckedBaseLogID, .Errs, .n)
+
+	Set tSC = $$$OK
+	
+	/// Loop through all errors
+	For i=1:1:n {
+		Set logID = Errs(i, "ID")
+		Set errText = Errs(i, "Text")
+		Set configName = Errs(i, "ConfigName")
+
+		If logID > ..CheckedBaseLogID {
+			Set ..CheckedBaseLogID = logID
+		}
+
+		If (expectedErrList.Size > 0) && (i <= expectedErrList.Size) {
+			Set expectedErr = expectedErrList.GetAt(i)
+			If (errText '[ expectedErr) {
+				Do ..LogColourMessage("Expected production error to contain text '" _ expectedErr _ "' but actual error is '" _ errText _ "'", "red")
+				Set tSC = $System.Status.Error(5001, ..ColourText("One or more production errors could not be validated -- Please see above", "red"))
+			} Else {
+				Do $I(^APTT.AccountedErrors, 1)
+				Do ..LogColourMessage("Error " _ i _ " is an expected error and contains the specified text", "green")
+			}
+		} Else {
+			Do ..LogMessage("[" _ configName _ "]: Error occurred - " _ errText)
+			Do $I(^APTT.AccountedErrors, 1)
+		}
+	}
+
+	/// Increment the base log ID to not overlap errors from the previous interaction
+	Set ..CheckedBaseLogID = ..CheckedBaseLogID + 1
+
+	Quit:expectedErrCnt'=n $System.Status.Error(5001,"Expected " _ expectedErrCnt _ " errors but " _ n _ " errors occurred since last interaction")
+
+	Do:$$$ISOK(tSC) ..LogColourMessage("-------->Expected " _ expectedErrCnt _ " errors and detected " _ n _ " errors", "green")
+	Quit tSC
+]]></Implementation>
+</Method>
+
+<Method name="CheckErrors">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	// Automatically check errors
+	Do $$$AssertEquals(^APTT.AccountedErrors, ^APTT.ExpectedErrors)
+	Do ..GetEventLog("error","", ..BaseLogId,,.TotalErrors)
+
+	If (^APTT.AccountedErrors'=^APTT.ExpectedErrors)||(^APTT.AccountedErrors'=TotalErrors) {
+		/// There were unaccounted errors within the production
+		Set msg = "Not all errors have been accounted for. Expected " _ ^APTT.ExpectedErrors _ " errors but actually accounted for " _ ^APTT.AccountedErrors _ " errors, there were " _ TotalErrors _ " errors that occurred in total."
+		Do ..LogErrors(..Error(..ColourText(msg, "red")))
+		Set ^APTT.Success = 0
+		Quit $System.Status.Error(5001, msg)
+	}
+	Quit $$$OK
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="APTT.Recorder">
+<Description><![CDATA[
+
+This class can be used to record test messages and automatically create a 
+JSON test definition file that can be modified to replay the tests that have been recorded.
+
+To use this class:
+1. Run:
+	`Do ##class(APTT.Recorder).Record(<production-class>, <target-component-name>)`
+2. Enter the file path to save the test definition file
+3. Choose whether to record [R] a new test or exit [E]. Exiting will save all tests to the definition file
+4. After recording a test, the test summary will be displayed in the console. Choose whether to Accept [A] or Reject [R] the test
+5. All accepted tests will be saved to the test definition file
+
+@author Auwais Hussain (ahussain@intersystems.com)
+@version 26.10.2025
+]]></Description>
+<Super>%RegisteredObject</Super>
+<TimeChanged>67649,41191.7406429</TimeChanged>
+<TimeCreated>67649,41191.7406429</TimeCreated>
+
+<UDLText name="T">
+<Content><![CDATA[
+// Todo: Move to UTIL class, DUPLICATE CODE.
+
+]]></Content>
+</UDLText>
+
+<Method name="GetPropertyDefinition">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pClassname,pProperty,*Collection:%String,*Type:%String</FormalSpec>
+<Implementation><![CDATA[
+	Set def = ##class(%Dictionary.CompiledProperty).%OpenId(pClassname _ "||" _ pProperty)
+	If (def = "") {
+		Throw ##class(%Exception.General).%New("Unable to find property","-77",,"Could not load property definition for property '" _ pProperty _ "' in class '" _ pClassname _ "', property does not exist")
+	}
+
+	Set Collection = def.Collection
+	Set Type = def.Type
+]]></Implementation>
+</Method>
+
+<Method name="GetLastMessageHeaderID">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pFrom:%String,pTo:%String</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Integer</ReturnType>
+<Implementation><![CDATA[
+	&sql(SELECT TOP 1 id INTO :lastid
+			 FROM Ens.MessageHeader
+			 WHERE SourceConfigName=:pFrom AND TargetConfigName=:pTo
+			 ORDER BY id DESC)
+
+	Return lastid
+]]></Implementation>
+</Method>
+
+<Method name="ClassType">
+<Description>
+Compute a property type given its class name
+Returns either "primitive", "list", "array", "object" or "json"</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pObj:%RegisteredObject</FormalSpec>
+<Implementation><![CDATA[
+	Set pClassName = $CLASSNAME(pObj)
+		
+	If ((pClassName = pObj) || $CLASSMETHOD(pClassName, "%Extends", "%DataType")) {
+		Return "primitive"
+	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%Collection.AbstractList")) {
+		Return "list"
+	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%Collection.AbstractArray")) {
+		Return "array"
+	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%DynamicObject") || $CLASSMETHOD(pClassName, "%Extends", "%DynamicArray")) {
+		Return "json"
+	} ElseIf ($CLASSMETHOD(pClassName, "%Extends", "%RegisteredObject")) {
+		Return "object"
+	} Else {
+		Throw ##class(%Exception.General).%New("Unknown object","-3911",,"Unknown how to handle object of class " _ pClassName)
+	}
+]]></Implementation>
+</Method>
+
+<Method name="TestConverter">
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+	Set a = ##class(APTT.Example.Request).%New()
+	Set a.Name = "Testing"
+	Set a.Age = 183
+	Set a.Gender = "M"
+	Do a.ContactNumbers.SetAt(1938293, "Home")
+	Do a.FavouriteColours.Insert("Blue")
+	Do a.FavouriteColours.Insert("Red")
+	Do a.FavouriteColours.Insert("Green")
+	Set address1 = ##class(APTT.Example.Model.Address).%New()
+	Set address1.HouseNumber = 381
+	Do address1.Streets.Insert("FakeStreet 1")
+	Set a.MainAddress = address1
+
+	Set address2 = ##class(APTT.Example.Model.Address).%New()
+	Set address2.HouseNumber = 34
+	Do address2.Streets.Insert("FakeStreet2 For OtherAddress")
+	Do a.OtherAddresses.Insert(address1)
+	Do a.OtherAddresses.Insert(address2)
+	Do a.NamedAddresses.SetAt(address1, "Home")
+
+	Write ..PopulateJSONFromObject(a).%ToJSON()
+]]></Implementation>
+</Method>
+
+<Method name="PopulateJSONFromObject">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pObject:%RegisteredObject</FormalSpec>
+<Implementation><![CDATA[
+	If (('$ISOBJECT(pObject)) || (pObject = "")) {
+		Return pObject
+	}
+
+	/// Loop through all properties of this object
+	Set className = $CLASSNAME(pObject)
+	Set objType = ..ClassType(pObject)
+
+	If (objType = "json") {
+		Return pObject
+	} ElseIf (objType = "primitive") {
+		Return pObject
+	} ElseIf (objType = "object") {
+
+		Set dyn = ##class(%Library.DynamicObject).%New()
+
+		/// This is an IRIS object, populate its properties
+
+		Set sql = ##class(%SQL.Statement).%ExecDirect(,"SELECT * FROM %Dictionary.CompiledProperty WHERE parent=? AND $EXTRACT(name, 1) != '%' AND private='0'", className)
+
+		While sql.%Next() {
+			Set property = ##class(%Dictionary.CompiledProperty).%OpenId(sql.%Get("id1"))
+
+			Set propName = property.Name
+			Set val = $PROPERTY(pObject, propName)
+
+			Do dyn.%Set(propName, ..PopulateJSONFromObject(val))
+		}
+
+		Return dyn
+		
+	} ElseIf (objType = "list") {
+		Set jsonlist = ##class(%DynamicArray).%New()
+
+		For i=1:1:pObject.Count() {
+			Do jsonlist.add(..PopulateJSONFromObject(pObject.GetAt(i)))
+		}
+
+		Return jsonlist
+	} ElseIf (objType = "array") {
+		/// Converting an objectscript array (key/value pair) into
+		/// a JSON object
+		Set jsonobj = ##class(%DynamicObject).%New()
+
+		Set sKey = pObject.Next("")
+		While sKey '= "" {
+			Set val = ..PopulateJSONFromObject(pObject.GetAt(sKey))
+			Do jsonobj.put(sKey, val)
+
+			Set sKey = pObject.Next(sKey)
+		}
+
+		Return jsonobj
+	}
+]]></Implementation>
+</Method>
+
+<Method name="MakeBooleanPrompt">
+<Description>
+
+pAcceptedAnswers is a comma-delimited list of potential answers</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pPrompt:%String,pAcceptedAnswers:%String</FormalSpec>
+<Implementation><![CDATA[
+	Set acceptedAns = $LISTFROMSTRING(pAcceptedAnswers, ",")
+	Set action = ""
+	
+	While (action = "" || '$LISTFIND(acceptedAns, action)) {
+		Write !,pPrompt
+		Read action
+	}
+
+	Return action
+]]></Implementation>
+</Method>
+
+<Method name="Record">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pProductionClass:%String="",pTargetName:%String="",pFileName:%String=""</FormalSpec>
+<Implementation><![CDATA[
+		If (pProductionClass = "") {
+			Read !,"Enter the production class: ",pProductionClass
+		}
+
+		Set production = ##class(Ens.Config.Production).%OpenId(pProductionClass,,.tSC)
+
+		If ('$$$ISOK(tSC)) {
+			Throw ##class(%Exception.General).%New("No production found", "-9910",,"No production named '"_pProductionClass_"' was found")
+		}
+
+		If (pTargetName = "") {
+			Read !,"Enter the target item name: ",pTargetName
+		}
+
+		Set pTarget = ""
+		For i=1:1:production.Items.Count() {
+			Set item = production.Items.GetAt(i)
+
+			#dim item As Ens.Config.Item
+			If (item.Name = pTargetName) {
+				Set pTarget = item
+			}
+		}
+
+		If (pTarget = "") {
+			Throw ##class(%Exception.General).%New("No item found","-3920",,"The production component named '" _ pTargetName _ "' was not found.")
+			Return
+		}
+
+		If pFileName = "" {
+			Read !,"Enter the file to save the tests to: ",pFileName
+		}
+
+		Set dir = ##class(%File).GetDirectory(pFileName)
+
+		If '##class(%File).DirectoryExists(dir) {
+			Throw ##class(%Exception.General).%New("Directory does not exist","-33312",,"The directory '" _ dir _ "' does not exist. Please create the directory before running the client")
+		}
+
+		If ##class(%File).Exists(pFileName) {
+			Throw ##class(%Exception.General).%New("File already exists","-33312",,"The file '" _ pFileName _ "' already exists")
+		}
+
+		#dim pTarget As Ens.Config.Item
+
+		Set testDefinition = {}
+		Set testDefinition.production = pProductionClass
+		Set testDefinition.namespace = $NAMESPACE
+		Set testDefinition.tests = []
+		Set testSuite = {}
+		Set testSuite.name = pTarget.Name
+		Set testSuite.class = pTarget.ClassName
+		Set interactions = []
+
+		Write !,!,"**Selected production '" _ pProductionClass _ "'"
+		Write !,"**Selected target item '" _ pTarget.Name _ "'"
+		Write !,"**Selected target item class '" _ pTarget.ClassName _ "'",!
+		Write !,"**Saving tests to '" _ pFileName _ "'",!
+
+		While (1) {
+			Set action = ..MakeBooleanPrompt("Record a new test [R] or exit [E]: ", "R,E")
+
+			If (action = "E") {
+				Write !,"Exiting..."
+				Write !
+				Set testSuite.interactions = interactions
+				Do testDefinition.tests.add(testSuite)
+
+				Try {
+					Do testDefinition.%ToJSON(pFileName)
+
+					Throw:'##class(%File).Exists(pFileName) ##class(%Exception.General).%New("Failed to save","-33313",,"Test definition file failed to save")
+					Write !,"**All tests saved successfully to " _ pFileName
+				} Catch ex {
+					Write !,"**Failed to save tests to '" _ pFileName _ "'"
+					Write !,"**Please paste the following JSON into your test definition file:",!
+					Write testDefinition.%ToJSON()
+				}
+				Return
+			}
+
+			Set interaction = ..RecordOneTest(pTarget.Name)
+
+			If (interaction '= "") {
+				Do interactions.add(interaction)
+			}
+		}
+]]></Implementation>
+</Method>
+
+<Method name="RecordOneTest">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pTarget:%String</FormalSpec>
+<Implementation><![CDATA[
+		Set lastID = ..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process")
+
+		Write !,"Last message ID found: " _ lastID
+
+		Write !,"**Please test the component using the management portal.."
+
+		Set latestID = lastID
+		While (latestID = lastID) {
+			Set latestID = ..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process")
+			Hang 2
+		}
+
+		/// A new message was detected, attempt to parse the input and output of this message
+		/// into JSON to be stored in the test definition file
+		Set reqMsgRequestHeader = ##class(Ens.MessageHeader).%OpenId(..GetLastMessageHeaderID("EnsLib.Testing.Process", pTarget))
+		Set reqMsgBodyClass = reqMsgRequestHeader.MessageBodyClassName
+		Set reqMsgBodyID = reqMsgRequestHeader.MessageBodyId
+		Set reqObj = $CLASSMETHOD(reqMsgBodyClass, "%OpenId", reqMsgBodyID)
+		Set reqJSON = ..PopulateJSONFromObject(reqObj)
+
+		Set respMsgRequestHeader = ##class(Ens.MessageHeader).%OpenId(..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process"))
+		Set respMsgBodyClass = respMsgRequestHeader.MessageBodyClassName
+		Set respMsgBodyID = respMsgRequestHeader.MessageBodyId
+		Set respObj = $CLASSMETHOD(respMsgBodyClass, "%OpenId", respMsgBodyID)
+		Set respJSON = ..PopulateJSONFromObject(respObj)
+
+		/// Print the test results out to the user
+		Write !,!,"Request Message",!
+		Set formatter = ##class(%JSON.Formatter).%New()
+
+		Do formatter.FormatToString(reqJSON, .reqFormatted)
+		Write reqFormatted
+
+		Write !,!,"Response Message",!
+
+		Do formatter.FormatToString(respJSON, .respFormatted)
+		Write respFormatted
+
+		Set accept = ..MakeBooleanPrompt("Accept test [A] or Reject [R]: ", "A,R")
+
+		If (accept = "R") {
+			Write !,"**Test has been rejected"
+			Return ""
+		}
+		
+		Set newLastID = ..GetLastMessageHeaderID(pTarget, "EnsLib.Testing.Process")
+
+		If newLastID = lastID {
+			Write !,"No new messages detected..."
+			Return ""
+		}
+
+		Read !,"Enter a name for this test: ", testName
+
+		Set interaction = {}
+		Set interaction.name = testName
+		Set interaction.request = {}
+		Set interaction.request.class = reqMsgBodyClass
+		Set interaction.request.properties = reqJSON
+
+		Set interaction.response = {}
+		Set interaction.response.class = respMsgBodyClass
+		Set interaction.response.properties = respJSON
+
+		Return interaction
+]]></Implementation>
+</Method>
+</Class>
+</Export>
